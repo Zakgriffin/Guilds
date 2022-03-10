@@ -1,4 +1,4 @@
-package com.zedfalcon.guilds;
+package com.zedfalcon.guilds.helpers;
 
 import java.util.Comparator;
 import java.util.TreeSet;

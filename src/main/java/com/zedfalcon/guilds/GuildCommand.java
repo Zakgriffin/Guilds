@@ -25,16 +25,21 @@ public class GuildCommand {
     private static int create(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         if (((GuildPlayer) player).getGuild() != null) {
-            player.sendMessage(new LiteralText("Can't create guild if already part of one"), true);
+            player.sendMessage(new LiteralText("You are already a member of a guild"), true);
             return Command.SINGLE_SUCCESS;
         }
-        String name = StringArgumentType.getString(context, "name");
-        if (name == null) {
-            return 0;
+        String guildName = StringArgumentType.getString(context, "name");
+        if (guildName == null) {
+            player.sendMessage(new LiteralText("You need to enter a guild name"), true);
+            return Command.SINGLE_SUCCESS;
         }
-        Guild guild = new Guild(name);
+        if (GuildStorage.INSTANCE.getGuildByName(guildName) != null) {
+            player.sendMessage(new LiteralText("A guild by that name already exists"), true);
+            return Command.SINGLE_SUCCESS;
+        }
+        Guild guild = new Guild(guildName);
         guild.addMember(player);
-        player.sendMessage(new LiteralText("Created guild: " + guild.getName()), true);
+        player.sendMessage(new LiteralText("Guild '" + guildName + "' created"), true);
         return Command.SINGLE_SUCCESS;
     }
 

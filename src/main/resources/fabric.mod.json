@@ -23,6 +23,7 @@
     ]
   },
   "mixins": [
+    "guilds.mixins.json"
   ],
 
   "depends": {
