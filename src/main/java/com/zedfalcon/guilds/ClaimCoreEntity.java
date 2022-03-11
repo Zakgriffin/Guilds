@@ -31,6 +31,9 @@ public class ClaimCoreEntity extends Entity implements PolymerEntity {
     public boolean damage(DamageSource source, float amount) {
         super.playSound(SoundEvents.BLOCK_BEACON_DEACTIVATE, 1f, 0.8f);
         super.remove(RemovalReason.KILLED);
+
+        claim.remove();
+
         return true;
     }
 

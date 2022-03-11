@@ -2,6 +2,7 @@ package com.zedfalcon.guilds.helpers;
 
 import net.minecraft.util.math.BlockPos;
 
+import java.awt.Point;
 import java.util.Set;
 
 public class BlockPosTransforms {
@@ -10,6 +11,14 @@ public class BlockPosTransforms {
                 blockPos.getX() >> 4,
                 blockPos.getY() >> 4,
                 blockPos.getZ() >> 4
+        );
+    }
+
+    public static BlockPos lowestCornerFromChunk(Point chunk) {
+        return new BlockPos(
+                chunk.x << 4,
+                0,
+                chunk.y << 4
         );
     }
 

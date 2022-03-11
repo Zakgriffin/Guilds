@@ -25,7 +25,9 @@ public class GuildCommand {
                 .then(CommandManager.literal("list").executes(GuildCommand::list))
                 .then(CommandManager.literal("join").then(
                         CommandManager.argument("name", StringArgumentType.string()).executes(GuildCommand::join)))
-                .then(CommandManager.literal("showClaim").executes(GuildCommand::showClaim)));
+                .then(CommandManager.literal("showClaim").executes(GuildCommand::showClaim))
+                .then(CommandManager.literal("showResistances").executes(GuildCommand::showResistances))
+        );
     }
 
     private static int create(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -104,8 +106,8 @@ public class GuildCommand {
     public static int showClaim(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
 
-        if(Guilds.visibleClaims.containsKey(player)) {
-            Guilds.visibleClaims.remove(player);
+        if(ClaimVisualization.INSTANCE.isShowingForPlayer(player)) {
+            ClaimVisualization.INSTANCE.removePlayerVisualizationForClaim(player);
             player.sendMessage(new LiteralText("No longer showing claim"), false);
             return Command.SINGLE_SUCCESS;
         }
@@ -116,11 +118,10 @@ public class GuildCommand {
             return Command.SINGLE_SUCCESS;
         }
         List<Claim> claims = ClaimStorage.INSTANCE.claimsAt(player.getBlockPos());
-        System.out.println("claims here: " + claims);
         if(claims != null) {
             for(Claim claim : claims) {
                 if(guild.ownsClaim(claim)) {
-                    Guilds.visibleClaims.put(player, claim);
+                    ClaimVisualization.INSTANCE.addPlayerVisualizationForClaim(player, claim);
                     player.sendMessage(new LiteralText("Showing claim"), false);
                     return Command.SINGLE_SUCCESS;
                 }
@@ -129,6 +130,19 @@ public class GuildCommand {
 
         player.sendMessage(new LiteralText("Your guild does not own a claim here"), false);
 
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static int showResistances(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayer();
+        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
+        Claim claim = ClaimStorage.INSTANCE.getClaimForGuildAt(guild, player.getBlockPos());
+        if(claim == null) {
+            player.sendMessage(new LiteralText("Your guild does not own a claim here"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        ClaimVisualization.INSTANCE.showClaimResistancesToPlayer(claim, player);
         return Command.SINGLE_SUCCESS;
     }
 }

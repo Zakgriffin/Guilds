@@ -47,7 +47,7 @@ public class ClaimCoreItem {
             return;
         }
 
-        Claim claim = new Claim(blockPos, world);
+        Claim claim = new Claim(blockPos, world, guild);
         guild.addClaim(claim);
 
         ClaimCoreEntity claimCore = ClaimCoreEntity.spawnAt(world, blockPos.up(), claim);

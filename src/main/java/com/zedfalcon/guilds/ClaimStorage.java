@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,19 +17,19 @@ public class ClaimStorage {
 
     private final Long2ObjectMap<List<Claim>> claims = new Long2ObjectOpenHashMap<>();
 
-    public void addChunksToClaim(Claim claim, Set<Point> chunksToAdd) {
+    public void addClaimToChunks(Claim claim, Set<Point> chunksToAdd) {
         for(Point chunkToAdd : chunksToAdd) {
-            addChunkToClaim(claim, chunkToAdd);
+            addClaimToChunk(claim, chunkToAdd);
         }
     }
 
-    public void removeChunksFromClaim(Claim claim, Set<Point> chunksToRemove) {
+    public void removeClaimFromChunks(Claim claim, Set<Point> chunksToRemove) {
         for(Point chunkToRemove : chunksToRemove) {
-            removeChunkFromClaim(claim, chunkToRemove);
+            removeClaimFromChunk(claim, chunkToRemove);
         }
     }
 
-    private void addChunkToClaim(Claim claim, Point chunk) {
+    private void addClaimToChunk(Claim claim, Point chunk) {
         long chunkLong = ChunkPos.toLong(chunk.x, chunk.y);
         if(!claims.containsKey(chunkLong)) {
             claims.put(chunkLong, new ArrayList<>());
@@ -36,7 +37,7 @@ public class ClaimStorage {
         claims.get(chunkLong).add(claim);
     }
 
-    private void removeChunkFromClaim(Claim claim, Point chunk) {
+    private void removeClaimFromChunk(Claim claim, Point chunk) {
         long chunkKey = ChunkPos.toLong(chunk.x, chunk.y);
         List<Claim> chunkClaims = claims.get(chunkKey);
         chunkClaims.remove(claim);
@@ -52,5 +53,16 @@ public class ClaimStorage {
             return null;
         }
         return claims.get(chunkKey);
+    }
+
+    @Nullable
+    public Claim getClaimForGuildAt(Guild guild, BlockPos blockPos) {
+        List<Claim> claims = claimsAt(blockPos);
+        for(Claim claim : claims) {
+            if(guild.ownsClaim(claim)) {
+                return claim;
+            }
+        }
+        return null;
     }
 }

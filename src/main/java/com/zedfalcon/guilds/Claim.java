@@ -5,19 +5,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
 import net.minecraft.world.World;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 // for now, assume all claims raidable
 public class Claim {
@@ -27,17 +21,19 @@ public class Claim {
     private final Vault vault;
     private final World world;
     private final ClaimResistances claimResistances;
+    private final Guild guild;
 
-    public Claim(Set<ClaimPoint> claimPoints, Vault vault, World world, ClaimResistances claimResistances) {
+    public Claim(Set<ClaimPoint> claimPoints, Vault vault, World world, ClaimResistances claimResistances, Guild guild) {
         this.claimPoints = claimPoints;
         this.outlineBlocks = new ArrayList<>();
         this.vault = vault;
         this.world = world;
         this.claimResistances = claimResistances;
         this.touchingChunks = new HashOrderedTreeSet<>();
+        this.guild = guild;
     }
 
-    public Claim(BlockPos blockPos, World world) {
+    public Claim(BlockPos blockPos, World world, Guild guild) {
         this.claimPoints = new HashOrderedTreeSet<>();
         this.outlineBlocks = new ArrayList<>();
         ClaimPoint vaultClaimPoint = new ClaimPoint(blockPos, 10);
@@ -45,8 +41,13 @@ public class Claim {
         this.world = world;
         this.claimResistances = new ClaimResistances(world);
         this.touchingChunks = new HashOrderedTreeSet<>();
+        this.guild = guild;
 
         addClaimPoint(vaultClaimPoint);
+    }
+
+    public ClaimResistances getClaimResistances() {
+        return claimResistances;
     }
 
     public void addClaimPoint(ClaimPoint claimPoint) {
@@ -63,8 +64,8 @@ public class Claim {
         newTouchingChunks.removeAll(oldTouchingChunks);
         Set<Point> chunksToAdd = newTouchingChunks;
 
-        ClaimStorage.INSTANCE.addChunksToClaim(this, chunksToAdd);
-//        claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
+        ClaimStorage.INSTANCE.addClaimToChunks(this, chunksToAdd);
+        claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
         touchingChunks = newTouchingChunks;
     }
 
@@ -82,7 +83,7 @@ public class Claim {
         oldTouchingChunks.removeAll(newTouchingChunks);
         Set<Point> chunksToRemove = oldTouchingChunks;
 
-        ClaimStorage.INSTANCE.removeChunksFromClaim(this, chunksToRemove);
+        ClaimStorage.INSTANCE.removeClaimFromChunks(this, chunksToRemove);
         claimResistances.removeClaimPointWithChunks(claimPoint, chunksToRemove);
         touchingChunks = newTouchingChunks;
     }
@@ -120,26 +121,19 @@ public class Claim {
         return world;
     }
 
-    public void showClaimOutlineTo(ServerPlayerEntity player) {
-        for (int i = 0; i < outlineBlocks.size(); i++) {
-            BlockPos b1 = outlineBlocks.get(i);
-            BlockPos b2 = outlineBlocks.get((i + 1) % outlineBlocks.size());
-            double dist = Math.sqrt(b1.getSquaredDistance(b2));
-            BlockPos vec = b2.subtract(b1);
-            BlockPos step = new BlockPos(
-                    vec.getX() / dist,
-                    vec.getY() / dist,
-                    vec.getZ() / dist
-            );
-            for (int j = 0; j < dist; j++) {
-                BlockPos l = b1.add(step.multiply(j));
-                DustParticleEffect particle = new DustParticleEffect(new Vec3f(Vec3d.unpackRgb(0xFFFF00)), 1);
-
-                ((ServerWorld) world).spawnParticles(player, particle, true, l.getX(), l.getY(), l.getZ(), 1, 0, 0, 0, 0);
-            }
-        }
+    public List<BlockPos> getOutlineBlocks() {
+        return outlineBlocks;
     }
 
+    public void remove() {
+        ClaimStorage.INSTANCE.removeClaimFromChunks(this, touchingChunks);
+        this.guild.removeClaim(this);
+        ClaimVisualization.INSTANCE.removeAllVisualizingClaim(this);
+    }
+
+    public Set<Point> getTouchingChunks() {
+        return touchingChunks;
+    }
 
     public static Claim fromJson(JsonObject claimObj) {
         // claimPoints
@@ -161,7 +155,10 @@ public class Claim {
         JsonObject claimResistancesObj = claimObj.getAsJsonObject("claimResistances");
         ClaimResistances claimResistances = ClaimResistances.fromJson(claimResistancesObj);
 
-        return new Claim(claimPoints, vault, world, claimResistances);
+        // guild
+        Guild guild = null;
+
+        return new Claim(claimPoints, vault, world, claimResistances, guild);
     }
 
     public JsonObject toJson() {
