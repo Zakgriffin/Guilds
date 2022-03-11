@@ -3,21 +3,24 @@ package com.zedfalcon.guilds;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.zedfalcon.guilds.helpers.BlockPosTransforms;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 // for now, assume all claims raidable
 public class Claim {
     private final Set<ClaimPoint> claimPoints;
     private List<BlockPos> outlineBlocks;
-    private Set<Point> touchingChunks;
+    private Set<ChunkPos> touchingChunks;
     private final Vault vault;
     private final World world;
     private final ClaimResistances claimResistances;
@@ -57,12 +60,12 @@ public class Claim {
         List<Point> outlinePoints = getOutlinePoints(enclosedBlocks);
         outlineBlocks = mapPointsToOutlineBlocks(outlinePoints, enclosedBlocks);
 
-        List<Point> outlineChunks = outlinePoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
-        Set<Point> oldTouchingChunks = touchingChunks;
-        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunks);
+        Set<ChunkPos> oldTouchingChunks = touchingChunks;
+        Set<ChunkPos> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlinePoints).stream()
+                .map(BlockPosTransforms::pointToChunkPosMapper).collect(Collectors.toSet());
 
         newTouchingChunks.removeAll(oldTouchingChunks);
-        Set<Point> chunksToAdd = newTouchingChunks;
+        Set<ChunkPos> chunksToAdd = newTouchingChunks;
 
         ClaimStorage.INSTANCE.addClaimToChunks(this, chunksToAdd);
         claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
@@ -70,22 +73,7 @@ public class Claim {
     }
 
     public void removeClaimPoint(ClaimPoint claimPoint) {
-        claimPoints.remove(claimPoint);
 
-        List<BlockPos> enclosedBlocks = findEnclosedBlocks();
-        List<Point> outlinePoints = getOutlinePoints(enclosedBlocks);
-        outlineBlocks = mapPointsToOutlineBlocks(outlinePoints, enclosedBlocks);
-
-        List<Point> outlineChunks = outlinePoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
-        Set<Point> oldTouchingChunks = touchingChunks;
-        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunks);
-
-        oldTouchingChunks.removeAll(newTouchingChunks);
-        Set<Point> chunksToRemove = oldTouchingChunks;
-
-        ClaimStorage.INSTANCE.removeClaimFromChunks(this, chunksToRemove);
-        claimResistances.removeClaimPointWithChunks(claimPoint, chunksToRemove);
-        touchingChunks = newTouchingChunks;
     }
 
     private List<BlockPos> findEnclosedBlocks() {
@@ -105,7 +93,8 @@ public class Claim {
 
     private List<BlockPos> mapPointsToOutlineBlocks(List<Point> outlinePoints, List<BlockPos> enclosedBlocks) {
         List<BlockPos> outlineBlocks = new ArrayList<>();
-        outer: for (Point point : outlinePoints) {
+        outer:
+        for (Point point : outlinePoints) {
             for (BlockPos enclosedBlock : enclosedBlocks) {
                 if (point.x == enclosedBlock.getX() && point.y == enclosedBlock.getZ()) {
                     outlineBlocks.add(enclosedBlock);
@@ -131,7 +120,7 @@ public class Claim {
         ClaimVisualization.INSTANCE.removeAllVisualizingClaim(this);
     }
 
-    public Set<Point> getTouchingChunks() {
+    public Set<ChunkPos> getTouchingChunks() {
         return touchingChunks;
     }
 

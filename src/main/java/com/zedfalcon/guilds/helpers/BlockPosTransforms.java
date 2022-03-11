@@ -1,42 +1,43 @@
 package com.zedfalcon.guilds.helpers;
 
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 
 import java.awt.Point;
 import java.util.Set;
 
 public class BlockPosTransforms {
-    public static BlockPos chunkOf(BlockPos blockPos) {
-        return new BlockPos(
-                blockPos.getX() >> 4,
-                blockPos.getY() >> 4,
-                blockPos.getZ() >> 4
+
+    public static ChunkPos pointToChunkPosMapper(Point p) {
+        return new ChunkPos(
+                ChunkSectionPos.getSectionCoord(p.x),
+                ChunkSectionPos.getSectionCoord(p.y)
         );
     }
 
-    public static BlockPos lowestCornerFromChunk(Point chunk) {
-        return new BlockPos(
-                chunk.x << 4,
-                0,
-                chunk.y << 4
+//    public static BlockPos snapToChunk(BlockPos blockPos) {
+//        ChunkSectionPos chunk = ChunkSectionPos.from(blockPos);
+//        return new BlockPos(
+//                chunk.getX() << 4,
+//                chunk.getY() << 4,
+//                chunk.getZ() << 4
+//        );
+//    }
+
+    public static ChunkSectionPos localizeToChunk(BlockPos blockPos) {
+        return ChunkSectionPos.from(
+                ChunkSectionPos.getLocalCoord(blockPos.getX()),
+                ChunkSectionPos.getLocalCoord(blockPos.getY()),
+                ChunkSectionPos.getLocalCoord(blockPos.getZ())
         );
     }
 
-    public static BlockPos snapToChunk(BlockPos blockPos) {
-        BlockPos chunk = chunkOf(blockPos);
+    public static BlockPos getMinPos(ChunkPos chunkPos) {
         return new BlockPos(
-                chunk.getX() << 4,
-                chunk.getY() << 4,
-                chunk.getZ() << 4
-        );
-    }
-
-    public static BlockPos localizeToChunk(BlockPos blockPos) {
-        BlockPos snappedToChunk = snapToChunk(blockPos);
-        return new BlockPos(
-                blockPos.getX() - snappedToChunk.getX(),
-                blockPos.getY() - snappedToChunk.getY(),
-                blockPos.getZ() - snappedToChunk.getZ()
+                ChunkSectionPos.getBlockCoord(chunkPos.x),
+                ChunkSectionPos.getBlockCoord(0), // TODO negative y
+                ChunkSectionPos.getBlockCoord(chunkPos.z)
         );
     }
 

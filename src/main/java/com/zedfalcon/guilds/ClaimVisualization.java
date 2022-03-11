@@ -12,9 +12,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 
 import java.awt.*;
@@ -147,8 +145,8 @@ public class ClaimVisualization {
 
     public void showClaimResistancesToPlayer(Claim claim, ServerPlayerEntity player) {
         boolean exists = resistanceVisible.containsKey(player);
-        for(Point chunk : claim.getTouchingChunks()) {
-            BlockPos lowestCorner = BlockPosTransforms.lowestCornerFromChunk(chunk);
+        for(ChunkPos chunk : claim.getTouchingChunks()) {
+            BlockPos lowestCorner = BlockPosTransforms.getMinPos(chunk);
             for(int y = 0; y < 255; y++) {
                 for(int x = 0; x < 16; x++) {
                     for(int z = 0; z < 16; z++) {

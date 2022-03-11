@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.world.World;
 
 import java.awt.Point;
@@ -38,8 +39,8 @@ public class ClaimResistances {
         this(world, new Long2ObjectOpenHashMap<>(), new Long2ObjectOpenHashMap<>());
     }
 
-    public void addClaimPointWithChunks(ClaimPoint claimPoint, Set<Point> chunksToAdd) {
-        for (Point chunkToAdd : chunksToAdd) {
+    public void addClaimPointWithChunks(ClaimPoint claimPoint, Set<ChunkPos> chunksToAdd) {
+        for (ChunkPos chunkToAdd : chunksToAdd) {
             addClaimResistancesForChunk(chunkToAdd);
         }
 
@@ -48,11 +49,14 @@ public class ClaimResistances {
                 blocksToUpdate.add(blockAccessed);
             }
         }
+
+        setResistanceAt(claimPoint.getBlockPos(), 0);
+        setClaimPointsAt(claimPoint.getBlockPos(), new ClaimPoint[] {claimPoint});
         updateFromQueue();
     }
 
-    private void addClaimResistancesForChunk(Point chunk) {
-        long chunkLong = ChunkPos.toLong(chunk.x, chunk.y);
+    private void addClaimResistancesForChunk(ChunkPos chunk) {
+        long chunkLong = ChunkPos.toLong(chunk.x, chunk.z);
         int CHUNKS_Y = 20;
         SubChunkResistances[] resistancesForChunk = new SubChunkResistances[CHUNKS_Y];
         SubChunkClaimPoints[] claimPointsForChunk = new SubChunkClaimPoints[CHUNKS_Y];
@@ -116,45 +120,45 @@ public class ClaimResistances {
     }
 
     public int getResistanceAt(BlockPos blockPos) {
-        BlockPos chunkLocalizedBlockPos = BlockPosTransforms.localizeToChunk(blockPos);
-        return getSubChunkResistances(blockPos).getResistanceAtLocalized(chunkLocalizedBlockPos);
+        ChunkSectionPos chunkSectionPos = BlockPosTransforms.localizeToChunk(blockPos);
+        return getSubChunkResistances(blockPos).getResistanceAtLocalized(chunkSectionPos);
     }
 
     public void setResistanceAt(BlockPos blockPos, int resistance) {
-        BlockPos chunkLocalizedBlockPos = BlockPosTransforms.localizeToChunk(blockPos);
-        getSubChunkResistances(blockPos).setResistanceAtLocalized(chunkLocalizedBlockPos, resistance);
+        ChunkSectionPos chunkSectionPos = BlockPosTransforms.localizeToChunk(blockPos);
+        getSubChunkResistances(blockPos).setResistanceAtLocalized(chunkSectionPos, resistance);
     }
 
     public ClaimPoint[] getClaimPointsAt(BlockPos blockPos) {
-        BlockPos chunkLocalizedBlockPos = BlockPosTransforms.localizeToChunk(blockPos);
-        return getSubChunkClaimPoints(blockPos).getClaimPointsAtLocalized(chunkLocalizedBlockPos);
+        ChunkSectionPos chunkSectionPos = BlockPosTransforms.localizeToChunk(blockPos);
+        return getSubChunkClaimPoints(blockPos).getClaimPointsAtLocalized(chunkSectionPos);
     }
 
     public void setClaimPointsAt(BlockPos blockPos, ClaimPoint[] claimPoints) {
-        BlockPos chunkLocalizedBlockPos = BlockPosTransforms.localizeToChunk(blockPos);
-        getSubChunkClaimPoints(blockPos).setClaimPointsAtLocalized(chunkLocalizedBlockPos, claimPoints);
+        ChunkSectionPos chunkSectionPos = BlockPosTransforms.localizeToChunk(blockPos);
+        getSubChunkClaimPoints(blockPos).setClaimPointsAtLocalized(chunkSectionPos, claimPoints);
     }
 
     private SubChunkResistances getSubChunkResistances(BlockPos blockPos) {
-        BlockPos chunk = BlockPosTransforms.chunkOf(blockPos);
-        long chunkKey = ChunkPos.toLong(chunk.getX(), chunk.getZ());
+        ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
+        long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         SubChunkResistances[] resistancesForChunk = resistancesForChunks.get(chunkKey);
-        return resistancesForChunk[chunk.getY()];
+        return resistancesForChunk[chunkSectionPos.getY()];
     }
 
     private SubChunkClaimPoints getSubChunkClaimPoints(BlockPos blockPos) {
-        BlockPos chunk = BlockPosTransforms.chunkOf(blockPos);
-        long chunkKey = ChunkPos.toLong(chunk.getX(), chunk.getZ());
+        ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
+        long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         SubChunkClaimPoints[] claimPointsForChunk = claimPointsForChunks.get(chunkKey);
-        return claimPointsForChunk[chunk.getY()];
+        return claimPointsForChunk[chunkSectionPos.getY()];
     }
 
     private boolean inBounds(BlockPos blockPos) {
-        BlockPos chunk = BlockPosTransforms.chunkOf(blockPos);
-        long chunkKey = ChunkPos.toLong(chunk.getX(), chunk.getZ());
+        ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
+        long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         if (!resistancesForChunks.containsKey(chunkKey)) return false;
         // TODO negative Y, also 255?
-        return chunk.getY() >= 0 && chunk.getY() <= 255;
+        return chunkSectionPos.getY() >= 0 && chunkSectionPos.getY() <= 255;
     }
 
     private int calculateBlockToBlockResistance(BlockPos from, BlockPos to) {
@@ -185,11 +189,11 @@ public class ClaimResistances {
     }
 
     public void updateFromQueue() {
-        updateFromQueueWithCalculator((from, to, resistance, claimPoints) -> {
-            if (resistance == Integer.MAX_VALUE) {
+        updateFromQueueWithCalculator((from, to, resistanceTo, claimPointsTo) -> {
+            if (resistanceTo == Integer.MAX_VALUE) {
                 return Integer.MAX_VALUE;
             }
-            return calculateBlockToBlockResistance(from, to) + resistance;
+            return calculateBlockToBlockResistance(from, to) + resistanceTo;
         });
     }
 
@@ -206,7 +210,8 @@ public class ClaimResistances {
 
                 int resistanceAtTo = getResistanceAt(blockAccessibleTo);
                 ClaimPoint[] claimPointsAtTo = getClaimPointsAt(blockAccessibleTo);
-                int resistanceBetween = resistanceCalculator.calculateResistance(currentBlockPos, blockAccessibleTo, resistanceAtTo, claimPointsAtTo);
+                int resistanceBetween = resistanceCalculator.calculateResistance(
+                        currentBlockPos, blockAccessibleTo, resistanceAtTo, claimPointsAtTo);
                 if (resistanceBetween < lowestResistance) {
                     lowestResistance = resistanceBetween;
                     lowestResistanceClaimPoints = claimPointsAtTo;
@@ -245,16 +250,16 @@ public class ClaimResistances {
             return (x * CHUNK_LENGTH * CHUNK_LENGTH) + (y * CHUNK_LENGTH) + z;
         }
 
-        private int chunkLocalizedBlockPosToIndex(BlockPos chunkLocalizedBlockPos) {
-            return xyzToIndex(chunkLocalizedBlockPos.getX(), chunkLocalizedBlockPos.getY(), chunkLocalizedBlockPos.getZ());
+        private int chunkLocalizedBlockPosToIndex(ChunkSectionPos chunkSectionPos) {
+            return xyzToIndex(chunkSectionPos.getX(), chunkSectionPos.getY(), chunkSectionPos.getZ());
         }
 
-        public int getResistanceAtLocalized(BlockPos chunkLocalizedBlockPos) {
-            return resistances[chunkLocalizedBlockPosToIndex(chunkLocalizedBlockPos)];
+        public int getResistanceAtLocalized(ChunkSectionPos chunkSectionPos) {
+            return resistances[chunkLocalizedBlockPosToIndex(chunkSectionPos)];
         }
 
-        public void setResistanceAtLocalized(BlockPos chunkLocalizedBlockPos, int resistance) {
-            resistances[chunkLocalizedBlockPosToIndex(chunkLocalizedBlockPos)] = resistance;
+        public void setResistanceAtLocalized(ChunkSectionPos chunkSectionPos, int resistance) {
+            resistances[chunkLocalizedBlockPosToIndex(chunkSectionPos)] = resistance;
         }
     }
 
@@ -272,16 +277,16 @@ public class ClaimResistances {
             return (x * CHUNK_LENGTH * CHUNK_LENGTH) + (y * CHUNK_LENGTH) + z;
         }
 
-        private int chunkLocalizedBlockPosToIndex(BlockPos chunkLocalizedBlockPos) {
-            return xyzToIndex(chunkLocalizedBlockPos.getX(), chunkLocalizedBlockPos.getY(), chunkLocalizedBlockPos.getZ());
+        private int chunkLocalizedBlockPosToIndex(ChunkSectionPos chunkSectionPos) {
+            return xyzToIndex(chunkSectionPos.getX(), chunkSectionPos.getY(), chunkSectionPos.getZ());
         }
 
-        public ClaimPoint[] getClaimPointsAtLocalized(BlockPos chunkLocalizedBlockPos) {
-            return claimPointSets[chunkLocalizedBlockPosToIndex(chunkLocalizedBlockPos)];
+        public ClaimPoint[] getClaimPointsAtLocalized(ChunkSectionPos chunkSectionPos) {
+            return claimPointSets[chunkLocalizedBlockPosToIndex(chunkSectionPos)];
         }
 
-        public void setClaimPointsAtLocalized(BlockPos chunkLocalizedBlockPos, ClaimPoint[] claimPoints) {
-            claimPointSets[chunkLocalizedBlockPosToIndex(chunkLocalizedBlockPos)] = claimPoints;
+        public void setClaimPointsAtLocalized(ChunkSectionPos chunkSectionPos, ClaimPoint[] claimPoints) {
+            claimPointSets[chunkLocalizedBlockPosToIndex(chunkSectionPos)] = claimPoints;
         }
     }
 
