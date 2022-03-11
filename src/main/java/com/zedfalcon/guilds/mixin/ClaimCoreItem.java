@@ -2,23 +2,18 @@ package com.zedfalcon.guilds.mixin;
 
 import com.zedfalcon.guilds.Claim;
 import com.zedfalcon.guilds.ClaimCoreEntity;
-import com.zedfalcon.guilds.ClaimStorage;
+import com.zedfalcon.guilds.Guild;
 import com.zedfalcon.guilds.GuildStorage;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EndCrystalItem;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Style;
-import net.minecraft.text.TextColor;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -44,7 +39,8 @@ public class ClaimCoreItem {
         ServerPlayerEntity player = (ServerPlayerEntity) context.getPlayer();
         assert player != null;
 
-        if(GuildStorage.INSTANCE.getPlayerGuild(player) == null) {
+        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
+        if(guild == null) {
             player.getWorld().playSound(null, context.getBlockPos(), SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.BLOCKS, 1f, 2f);
             player.sendMessage(new LiteralText("§cYou need to be part of a guild to create a claim"), true);
             info.setReturnValue(ActionResult.success(true));
@@ -52,6 +48,7 @@ public class ClaimCoreItem {
         }
 
         Claim claim = new Claim(blockPos, world);
+        guild.addClaim(claim);
 
         ClaimCoreEntity claimCore = ClaimCoreEntity.spawnAt(world, blockPos.up(), claim);
         world.spawnEntity(claimCore);

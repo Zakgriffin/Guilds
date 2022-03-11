@@ -50,7 +50,7 @@ public class GuildStorage {
     }
 
     @Nullable
-    public Guild getPlayerGuild(ServerPlayerEntity player) {
+    public Guild getGuildOfPlayer(ServerPlayerEntity player) {
         return ((GuildPlayer) player).getGuild();
     }
 

@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 public abstract class Traversal<T> {
     private final Queue<T> toVisit;
-    private final Set<T> visited;
+    protected final Set<T> visited;
     private boolean terminated;
 
     public Traversal() {
@@ -17,6 +17,7 @@ public abstract class Traversal<T> {
     }
 
     protected abstract Set<T> getSuccessors(T item);
+    protected void onEach(T item) {}
 
     public void addToVisit(T item) {
         toVisit.add(item);
@@ -25,6 +26,7 @@ public abstract class Traversal<T> {
     public void traverse() {
         while (toVisit.size() > 0 && !terminated) {
             T item = toVisit.remove();
+            onEach(item);
             toVisit.addAll(getSuccessors(item));
             visited.add(item);
         }

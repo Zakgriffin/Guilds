@@ -34,6 +34,14 @@ public class Guild {
         this.claims = claims;
     }
 
+    public void addClaim(Claim claim) {
+        claims.add(claim);
+    }
+
+    public void removeClaim(Claim claim) {
+        claims.remove(claim);
+    }
+
     public void addMember(ServerPlayerEntity player) {
         ((GuildPlayer) player).setGuild(this);
         members.add(player.getUuid());
@@ -61,6 +69,10 @@ public class Guild {
 
     public String getName() {
         return name;
+    }
+
+    public boolean ownsClaim(Claim claim) {
+        return claims.contains(claim);
     }
 
     // JSON

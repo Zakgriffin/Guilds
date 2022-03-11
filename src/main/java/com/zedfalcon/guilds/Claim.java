@@ -5,7 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
+import net.minecraft.particle.DustParticleEffect;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3f;
 import net.minecraft.world.World;
 
 import java.awt.Point;
@@ -17,7 +22,7 @@ import java.util.TreeSet;
 // for now, assume all claims raidable
 public class Claim {
     private final Set<ClaimPoint> claimPoints;
-    private List<ClaimPoint> outlineClaimPoints;
+    private List<BlockPos> outlineBlocks;
     private Set<Point> touchingChunks;
     private final Vault vault;
     private final World world;
@@ -25,19 +30,21 @@ public class Claim {
 
     public Claim(Set<ClaimPoint> claimPoints, Vault vault, World world, ClaimResistances claimResistances) {
         this.claimPoints = claimPoints;
-        this.outlineClaimPoints = new ArrayList<>();
+        this.outlineBlocks = new ArrayList<>();
         this.vault = vault;
         this.world = world;
         this.claimResistances = claimResistances;
+        this.touchingChunks = new HashOrderedTreeSet<>();
     }
 
     public Claim(BlockPos blockPos, World world) {
         this.claimPoints = new HashOrderedTreeSet<>();
-        this.outlineClaimPoints = new ArrayList<>();
+        this.outlineBlocks = new ArrayList<>();
         ClaimPoint vaultClaimPoint = new ClaimPoint(blockPos, 10);
         this.vault = new Vault(vaultClaimPoint);
         this.world = world;
         this.claimResistances = new ClaimResistances(world);
+        this.touchingChunks = new HashOrderedTreeSet<>();
 
         addClaimPoint(vaultClaimPoint);
     }
@@ -45,62 +52,94 @@ public class Claim {
     public void addClaimPoint(ClaimPoint claimPoint) {
         claimPoints.add(claimPoint);
 
-        List<Point> outlinePoints = getOutlinePoints();
-        outlineClaimPoints = mapOutlinePointsToClaimPoints(outlinePoints);
+        List<BlockPos> enclosedBlocks = findEnclosedBlocks();
+        List<Point> outlinePoints = getOutlinePoints(enclosedBlocks);
+        outlineBlocks = mapPointsToOutlineBlocks(outlinePoints, enclosedBlocks);
 
+        List<Point> outlineChunks = outlinePoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
         Set<Point> oldTouchingChunks = touchingChunks;
-        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygon(outlinePoints);
+        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunks);
 
         newTouchingChunks.removeAll(oldTouchingChunks);
         Set<Point> chunksToAdd = newTouchingChunks;
 
         ClaimStorage.INSTANCE.addChunksToClaim(this, chunksToAdd);
-        claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
+//        claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
+        touchingChunks = newTouchingChunks;
     }
 
     public void removeClaimPoint(ClaimPoint claimPoint) {
         claimPoints.remove(claimPoint);
 
-        List<Point> outlinePoints = getOutlinePoints();
-        outlineClaimPoints = mapOutlinePointsToClaimPoints(outlinePoints);
+        List<BlockPos> enclosedBlocks = findEnclosedBlocks();
+        List<Point> outlinePoints = getOutlinePoints(enclosedBlocks);
+        outlineBlocks = mapPointsToOutlineBlocks(outlinePoints, enclosedBlocks);
 
+        List<Point> outlineChunks = outlinePoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
         Set<Point> oldTouchingChunks = touchingChunks;
-        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygon(outlinePoints);
+        Set<Point> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunks);
 
         oldTouchingChunks.removeAll(newTouchingChunks);
         Set<Point> chunksToRemove = oldTouchingChunks;
 
         ClaimStorage.INSTANCE.removeChunksFromClaim(this, chunksToRemove);
         claimResistances.removeClaimPointWithChunks(claimPoint, chunksToRemove);
+        touchingChunks = newTouchingChunks;
     }
 
-    public List<Point> getOutlinePoints() {
-        List<Point> enclosedPoints = new ArrayList<>();
+    private List<BlockPos> findEnclosedBlocks() {
+        List<BlockPos> enclosedBlocks = new ArrayList<>();
         for (ClaimPoint claimPoint : claimPoints) {
-            enclosedPoints.addAll(claimPoint.getCornerPoints());
+            enclosedBlocks.addAll(claimPoint.getCorners());
         }
-        enclosedPoints.addAll(vault.getClaimPoint().getCornerPoints());
+        enclosedBlocks.addAll(vault.getClaimPoint().getCorners());
+        return enclosedBlocks;
+    }
 
+    private List<Point> getOutlinePoints(List<BlockPos> enclosedBlocks) {
+        enclosedBlocks.addAll(vault.getClaimPoint().getCorners());
+        List<Point> enclosedPoints = enclosedBlocks.stream().map(b -> new Point(b.getX(), b.getZ())).toList();
         return Geometry.convexHull(enclosedPoints);
     }
 
-    public List<ClaimPoint> mapOutlinePointsToClaimPoints(List<Point> outlinePoints) {
-        List<ClaimPoint> outlineClaimPoints = new ArrayList<>();
-        outer:
-        for (Point outlinePoint : outlinePoints) {
-            for (ClaimPoint claimPoint : claimPoints) {
-                if (outlinePoint.x == claimPoint.getBlockPos().getX() && outlinePoint.y == claimPoint.getBlockPos().getZ()) {
-                    outlineClaimPoints.add(claimPoint);
+    private List<BlockPos> mapPointsToOutlineBlocks(List<Point> outlinePoints, List<BlockPos> enclosedBlocks) {
+        List<BlockPos> outlineBlocks = new ArrayList<>();
+        outer: for (Point point : outlinePoints) {
+            for (BlockPos enclosedBlock : enclosedBlocks) {
+                if (point.x == enclosedBlock.getX() && point.y == enclosedBlock.getZ()) {
+                    outlineBlocks.add(enclosedBlock);
                     continue outer;
                 }
             }
         }
-        return outlineClaimPoints;
+
+        return outlineBlocks;
     }
 
     public World getWorld() {
         return world;
     }
+
+    public void showClaimOutlineTo(ServerPlayerEntity player) {
+        for (int i = 0; i < outlineBlocks.size(); i++) {
+            BlockPos b1 = outlineBlocks.get(i);
+            BlockPos b2 = outlineBlocks.get((i + 1) % outlineBlocks.size());
+            double dist = Math.sqrt(b1.getSquaredDistance(b2));
+            BlockPos vec = b2.subtract(b1);
+            BlockPos step = new BlockPos(
+                    vec.getX() / dist,
+                    vec.getY() / dist,
+                    vec.getZ() / dist
+            );
+            for (int j = 0; j < dist; j++) {
+                BlockPos l = b1.add(step.multiply(j));
+                DustParticleEffect particle = new DustParticleEffect(new Vec3f(Vec3d.unpackRgb(0xFFFF00)), 1);
+
+                ((ServerWorld) world).spawnParticles(player, particle, true, l.getX(), l.getY(), l.getZ(), 1, 0, 0, 0, 0);
+            }
+        }
+    }
+
 
     public static Claim fromJson(JsonObject claimObj) {
         // claimPoints

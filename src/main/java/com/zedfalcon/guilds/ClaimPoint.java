@@ -20,12 +20,12 @@ public class ClaimPoint {
         return blockPos;
     }
 
-    public Set<Point> getCornerPoints() {
+    public Set<BlockPos> getCorners() {
         return Set.of(
-                new Point(blockPos.getX() + squareRadius, blockPos.getZ() + squareRadius),
-                new Point(blockPos.getX() + squareRadius, blockPos.getZ() - squareRadius),
-                new Point(blockPos.getX() - squareRadius, blockPos.getZ() + squareRadius),
-                new Point(blockPos.getX() - squareRadius, blockPos.getZ() - squareRadius)
+                blockPos.add(squareRadius, 0, squareRadius),
+                blockPos.add(squareRadius, 0, -squareRadius),
+                blockPos.add(-squareRadius, 0, squareRadius),
+                blockPos.add(-squareRadius, 0, -squareRadius)
         );
     }
 

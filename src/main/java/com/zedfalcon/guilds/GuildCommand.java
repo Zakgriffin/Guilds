@@ -10,6 +10,11 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 public class GuildCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, boolean dedicated) {
         dispatcher.register(CommandManager.literal("guild")
@@ -19,7 +24,8 @@ public class GuildCommand {
                 .then(CommandManager.literal("leave").executes(GuildCommand::leave))
                 .then(CommandManager.literal("list").executes(GuildCommand::list))
                 .then(CommandManager.literal("join").then(
-                        CommandManager.argument("name", StringArgumentType.string()).executes(GuildCommand::join))));
+                        CommandManager.argument("name", StringArgumentType.string()).executes(GuildCommand::join)))
+                .then(CommandManager.literal("showClaim").executes(GuildCommand::showClaim)));
     }
 
     private static int create(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -45,7 +51,7 @@ public class GuildCommand {
 
     public static int info(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
-        Guild guild = GuildStorage.INSTANCE.getPlayerGuild(player);
+        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
         if (guild == null) {
             player.sendMessage(new LiteralText("You are not part of a guild"), false);
         } else {
@@ -56,7 +62,7 @@ public class GuildCommand {
 
     public static int leave(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
-        Guild guild = GuildStorage.INSTANCE.getPlayerGuild(player);
+        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
         if (guild == null) {
             player.sendMessage(new LiteralText("You are not part of a guild"), true);
         } else {
@@ -92,6 +98,37 @@ public class GuildCommand {
             guild.addMember(player);
             player.sendMessage(new LiteralText("You have joined the guild " + guild.getName()), true);
         }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static int showClaim(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayer();
+
+        if(Guilds.visibleClaims.containsKey(player)) {
+            Guilds.visibleClaims.remove(player);
+            player.sendMessage(new LiteralText("No longer showing claim"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+
+        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
+        if(guild == null) {
+            player.sendMessage(new LiteralText("You are not part of a guild"), false);
+            return Command.SINGLE_SUCCESS;
+        }
+        List<Claim> claims = ClaimStorage.INSTANCE.claimsAt(player.getBlockPos());
+        System.out.println("claims here: " + claims);
+        if(claims != null) {
+            for(Claim claim : claims) {
+                if(guild.ownsClaim(claim)) {
+                    Guilds.visibleClaims.put(player, claim);
+                    player.sendMessage(new LiteralText("Showing claim"), false);
+                    return Command.SINGLE_SUCCESS;
+                }
+            }
+        }
+
+        player.sendMessage(new LiteralText("Your guild does not own a claim here"), false);
+
         return Command.SINGLE_SUCCESS;
     }
 }

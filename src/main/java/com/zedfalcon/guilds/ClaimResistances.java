@@ -58,8 +58,8 @@ public class ClaimResistances {
                 blocksToUpdate.add(blockAccessed);
             }
         }
-
-        updateFromQueue();
+// TODO put back
+//        updateFromQueue();
     }
 
     private void addClaimResistancesForChunk(Point chunk) {
