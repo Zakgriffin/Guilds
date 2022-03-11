@@ -5,12 +5,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 // for now, assume all claims raidable
 public class Claim {
@@ -27,6 +29,17 @@ public class Claim {
         this.vault = vault;
         this.world = world;
         this.claimResistances = claimResistances;
+    }
+
+    public Claim(BlockPos blockPos, World world) {
+        this.claimPoints = new HashOrderedTreeSet<>();
+        this.outlineClaimPoints = new ArrayList<>();
+        ClaimPoint vaultClaimPoint = new ClaimPoint(blockPos, 10);
+        this.vault = new Vault(vaultClaimPoint);
+        this.world = world;
+        this.claimResistances = new ClaimResistances(world);
+
+        addClaimPoint(vaultClaimPoint);
     }
 
     public void addClaimPoint(ClaimPoint claimPoint) {
@@ -103,7 +116,7 @@ public class Claim {
         Vault vault = Vault.fromJson(vaultObj);
 
         // world
-
+        World world = null;
 
         // allChunkClaimResistances
         JsonObject claimResistancesObj = claimObj.getAsJsonObject("claimResistances");

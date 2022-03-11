@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.zedfalcon.guilds.helpers.BlockPosTransforms;
 import com.zedfalcon.guilds.helpers.Traversal;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -13,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 
 class ResistancePair {
     int resistance;
@@ -40,6 +42,11 @@ public class ClaimResistances {
         this.blocksToUpdate = new LinkedList<>();
     }
 
+    public ClaimResistances(World world) {
+        this.world = world;
+        this.allChunkClaimResistances = new Long2ObjectOpenHashMap<>();
+        this.blocksToUpdate = new LinkedList<>();
+    }
 
     public void addClaimPointWithChunks(ClaimPoint claimPoint, Set<Point> chunksToAdd) {
         for (Point chunkToAdd : chunksToAdd) {
@@ -227,9 +234,8 @@ public class ClaimResistances {
         }
     }
 
-    public static ClaimResistances fromJson(JsonObject claimResistancesObj, World world) {
+    public static ClaimResistances fromJson(JsonObject claimResistancesObj) {
         //
-        claimResistancesObj.getAsJsonObject("")
-        return new ClaimResistances(world, allChunkClaimResistances);
+        return null;
     }
 }

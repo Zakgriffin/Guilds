@@ -90,28 +90,28 @@ public class GuildStorage {
     }
 
     public void save(MinecraftServer server) {
-        File dir = new File(
-                String.valueOf(DimensionType.getSaveDirectory(World.OVERWORLD, server.getSavePath(WorldSavePath.ROOT))),
-                "/data/guilds/");
-        if (!dir.exists() && !dir.mkdir()) {
-            Logger.getLogger("guilds").log(Level.WARNING, "failed to create guilds directory");
-        }
-
-        try {
-            for (Guild modifiedGuild : modifiedGuilds) {
-                String id = modifiedGuild.getID().toString();
-                File file = new File(dir, id + ".json");
-                if (!file.exists() && !file.createNewFile()) {
-                    Logger.getLogger("guilds").log(Level.WARNING, "failed to create a guild file");
-                }
-
-                JsonObject obj = modifiedGuild.toJson();
-                FileWriter writer = new FileWriter(file);
-                GSON.toJson(obj, writer);
-                writer.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        File dir = new File(
+//                String.valueOf(DimensionType.getSaveDirectory(World.OVERWORLD, server.getSavePath(WorldSavePath.ROOT))),
+//                "/data/guilds/");
+//        if (!dir.exists() && !dir.mkdir()) {
+//            Logger.getLogger("guilds").log(Level.WARNING, "failed to create guilds directory");
+//        }
+//
+//        try {
+//            for (Guild modifiedGuild : modifiedGuilds) {
+//                String id = modifiedGuild.getID().toString();
+//                File file = new File(dir, id + ".json");
+//                if (!file.exists() && !file.createNewFile()) {
+//                    Logger.getLogger("guilds").log(Level.WARNING, "failed to create a guild file");
+//                }
+//
+//                JsonObject obj = modifiedGuild.toJson();
+//                FileWriter writer = new FileWriter(file);
+//                GSON.toJson(obj, writer);
+//                writer.close();
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 }
