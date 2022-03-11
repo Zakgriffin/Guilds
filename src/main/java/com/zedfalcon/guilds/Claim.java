@@ -57,11 +57,12 @@ public class Claim {
         claimPoints.add(claimPoint);
 
         List<BlockPos> enclosedBlocks = findEnclosedBlocks();
-        List<Point> outlinePoints = getOutlinePoints(enclosedBlocks);
-        outlineBlocks = mapPointsToOutlineBlocks(outlinePoints, enclosedBlocks);
+        List<Point> outlineBlockPoints = getOutlinePoints(enclosedBlocks);
+        outlineBlocks = mapPointsToOutlineBlocks(outlineBlockPoints, enclosedBlocks);
+        List<Point> outlineChunkPoints = outlineBlockPoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
 
         Set<ChunkPos> oldTouchingChunks = touchingChunks;
-        Set<ChunkPos> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlinePoints).stream()
+        Set<ChunkPos> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunkPoints).stream()
                 .map(BlockPosTransforms::pointToChunkPosMapper).collect(Collectors.toSet());
 
         newTouchingChunks.removeAll(oldTouchingChunks);
@@ -86,7 +87,6 @@ public class Claim {
     }
 
     private List<Point> getOutlinePoints(List<BlockPos> enclosedBlocks) {
-        enclosedBlocks.addAll(vault.getClaimPoint().getCorners());
         List<Point> enclosedPoints = enclosedBlocks.stream().map(b -> new Point(b.getX(), b.getZ())).toList();
         return Geometry.convexHull(enclosedPoints);
     }

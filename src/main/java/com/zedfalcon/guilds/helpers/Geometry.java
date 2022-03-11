@@ -46,7 +46,6 @@ public class Geometry {
         Traversal<Point> traversal = new Traversal<>() {
             @Override
             protected Set<Point> getSuccessors(Point point) {
-                // TODO figure out why repeats happening
                 return getAdjacentPoints(point).stream()
                         .filter((p) -> !super.visited.contains(p))
                         .filter((p) -> pointWithinPolygonInclusive(p, polygonPoints)).collect(Collectors.toSet());
@@ -121,13 +120,10 @@ public class Geometry {
     }
 
     static boolean onSegment(Point p, Point q, Point r) {
-        if (q.x <= Math.max(p.x, r.x) &&
+        return q.x <= Math.max(p.x, r.x) &&
                 q.x >= Math.min(p.x, r.x) &&
                 q.y <= Math.max(p.y, r.y) &&
-                q.y >= Math.min(p.y, r.y)) {
-            return true;
-        }
-        return false;
+                q.y >= Math.min(p.y, r.y);
     }
 
     // 0 --> p, q and r are collinear
@@ -151,20 +147,12 @@ public class Geometry {
 
         if (o1 != o2 && o3 != o4) {
             return true;
-        }
-
-        if (o1 == 0 && onSegment(p1, p2, q1)) {
+        } else if (o1 == 0 && onSegment(p1, p2, q1)) {
             return true;
-        }
-        if (o2 == 0 && onSegment(p1, q2, q1)) {
+        } else if (o2 == 0 && onSegment(p1, q2, q1)) {
             return true;
-        }
-        if (o3 == 0 && onSegment(p2, p1, q2)) {
+        } else if (o3 == 0 && onSegment(p2, p1, q2)) {
             return true;
-        }
-        if (o4 == 0 && onSegment(p2, q1, q2)) {
-            return true;
-        }
-        return false;
+        } else return o4 == 0 && onSegment(p2, q1, q2);
     }
 }

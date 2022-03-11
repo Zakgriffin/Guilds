@@ -21,6 +21,7 @@ public class ClaimResistances {
     private final Long2ObjectMap<SubChunkResistances[]> resistancesForChunks;
     private final Long2ObjectMap<SubChunkClaimPoints[]> claimPointsForChunks;
     private final World world;
+    private final int sectionsY;
 
     private final Queue<BlockPos> blocksToUpdate;
 
@@ -33,6 +34,7 @@ public class ClaimResistances {
         this.resistancesForChunks = resistancesForChunks;
         this.claimPointsForChunks = claimPointsForChunks;
         this.blocksToUpdate = new LinkedList<>();
+        this.sectionsY = world.countVerticalSections();
     }
 
     public ClaimResistances(World world) {
@@ -57,10 +59,9 @@ public class ClaimResistances {
 
     private void addClaimResistancesForChunk(ChunkPos chunk) {
         long chunkLong = ChunkPos.toLong(chunk.x, chunk.z);
-        int CHUNKS_Y = 20;
-        SubChunkResistances[] resistancesForChunk = new SubChunkResistances[CHUNKS_Y];
-        SubChunkClaimPoints[] claimPointsForChunk = new SubChunkClaimPoints[CHUNKS_Y];
-        for (int i = 0; i < CHUNKS_Y; i++) {
+        SubChunkResistances[] resistancesForChunk = new SubChunkResistances[sectionsY];
+        SubChunkClaimPoints[] claimPointsForChunk = new SubChunkClaimPoints[sectionsY];
+        for (int i = 0; i < sectionsY; i++) {
             resistancesForChunk[i] = new SubChunkResistances();
             claimPointsForChunk[i] = new SubChunkClaimPoints();
         }
@@ -143,22 +144,25 @@ public class ClaimResistances {
         ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
         long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         SubChunkResistances[] resistancesForChunk = resistancesForChunks.get(chunkKey);
-        return resistancesForChunk[chunkSectionPos.getY()];
+        return resistancesForChunk[forcePositive(chunkSectionPos.getY())];
     }
 
     private SubChunkClaimPoints getSubChunkClaimPoints(BlockPos blockPos) {
         ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
         long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         SubChunkClaimPoints[] claimPointsForChunk = claimPointsForChunks.get(chunkKey);
-        return claimPointsForChunk[chunkSectionPos.getY()];
+        return claimPointsForChunk[forcePositive(chunkSectionPos.getY())];
+    }
+
+    private int forcePositive(int i) {
+        return i < 0 ? i + sectionsY : i;
     }
 
     private boolean inBounds(BlockPos blockPos) {
         ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
         long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         if (!resistancesForChunks.containsKey(chunkKey)) return false;
-        // TODO negative Y, also 255?
-        return chunkSectionPos.getY() >= 0 && chunkSectionPos.getY() <= 255;
+        return !world.isOutOfHeightLimit(blockPos);
     }
 
     private int calculateBlockToBlockResistance(BlockPos from, BlockPos to) {
