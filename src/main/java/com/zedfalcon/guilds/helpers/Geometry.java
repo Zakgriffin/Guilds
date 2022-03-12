@@ -18,6 +18,7 @@ public class Geometry {
 
     @Nullable
     public static List<Point> convexHull(List<Point> points) {
+        System.out.println("convexHull?: " + points);
         if (points.size() < 3) return null;
 
         List<Point> hull = new ArrayList<>();

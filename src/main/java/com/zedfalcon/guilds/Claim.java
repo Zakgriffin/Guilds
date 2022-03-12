@@ -57,19 +57,29 @@ public class Claim {
         claimPoints.add(claimPoint);
 
         List<BlockPos> enclosedBlocks = findEnclosedBlocks();
+        System.out.println("enclosedBlocks: " + enclosedBlocks);
         List<Point> outlineBlockPoints = getOutlinePoints(enclosedBlocks);
+        System.out.println("outlineBlockPoints: " + outlineBlockPoints);
         outlineBlocks = mapPointsToOutlineBlocks(outlineBlockPoints, enclosedBlocks);
+        System.out.println("outlineBlocks: " + outlineBlocks);
         List<Point> outlineChunkPoints = outlineBlockPoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
+        System.out.println("outlineChunkPoints: " + outlineChunkPoints);
 
         Set<ChunkPos> oldTouchingChunks = touchingChunks;
-        Set<ChunkPos> newTouchingChunks = Geometry.findAllPointsWithinPolygonInclusive(outlineChunkPoints).stream()
-                .map(BlockPosTransforms::pointToChunkPosMapper).collect(Collectors.toSet());
+        Set<Point> bonk = Geometry.findAllPointsWithinPolygonInclusive(outlineChunkPoints);
+        System.out.println("bonk: " + bonk);
+        Set<ChunkPos> newTouchingChunks = bonk.stream().map(p -> new ChunkPos(p.x, p.y)).collect(Collectors.toSet());
+
+        System.out.println("newTouchingChunks: " + newTouchingChunks);
 
         newTouchingChunks.removeAll(oldTouchingChunks);
         Set<ChunkPos> chunksToAdd = newTouchingChunks;
+        System.out.println("chunksToAdd: " + chunksToAdd);
 
         ClaimStorage.INSTANCE.addClaimToChunks(this, chunksToAdd);
+        System.out.println("BING!");
         claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
+        System.out.println("BONG!");
         touchingChunks = newTouchingChunks;
     }
 
@@ -82,7 +92,6 @@ public class Claim {
         for (ClaimPoint claimPoint : claimPoints) {
             enclosedBlocks.addAll(claimPoint.getCorners());
         }
-        enclosedBlocks.addAll(vault.getClaimPoint().getCorners());
         return enclosedBlocks;
     }
 

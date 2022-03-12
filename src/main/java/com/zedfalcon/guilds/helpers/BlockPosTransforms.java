@@ -4,18 +4,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 
-import java.awt.Point;
 import java.util.Set;
 
 public class BlockPosTransforms {
-
-    public static ChunkPos pointToChunkPosMapper(Point p) {
-        return new ChunkPos(
-                ChunkSectionPos.getSectionCoord(p.x),
-                ChunkSectionPos.getSectionCoord(p.y)
-        );
-    }
-
 //    public static BlockPos snapToChunk(BlockPos blockPos) {
 //        ChunkSectionPos chunk = ChunkSectionPos.from(blockPos);
 //        return new BlockPos(

@@ -10,7 +10,6 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.world.World;
 
-import java.awt.Point;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -58,19 +57,19 @@ public class ClaimResistances {
     }
 
     private void addClaimResistancesForChunk(ChunkPos chunk) {
-        long chunkLong = ChunkPos.toLong(chunk.x, chunk.z);
+        long chunkKey = ChunkPos.toLong(chunk.x, chunk.z);
         SubChunkResistances[] resistancesForChunk = new SubChunkResistances[sectionsY];
         SubChunkClaimPoints[] claimPointsForChunk = new SubChunkClaimPoints[sectionsY];
         for (int i = 0; i < sectionsY; i++) {
             resistancesForChunk[i] = new SubChunkResistances();
             claimPointsForChunk[i] = new SubChunkClaimPoints();
         }
-        resistancesForChunks.put(chunkLong, resistancesForChunk);
-        claimPointsForChunks.put(chunkLong, claimPointsForChunk);
+        resistancesForChunks.put(chunkKey, resistancesForChunk);
+        claimPointsForChunks.put(chunkKey, claimPointsForChunk);
     }
 
-    public void removeClaimPointWithChunks(ClaimPoint claimPoint, Set<Point> chunksToRemove) {
-        for (Point chunkToRemove : chunksToRemove) {
+    public void removeClaimPointWithChunks(ClaimPoint claimPoint, Set<ChunkPos> chunksToRemove) {
+        for (ChunkPos chunkToRemove : chunksToRemove) {
             removeClaimResistancesForChunk(chunkToRemove);
         }
 
@@ -86,8 +85,8 @@ public class ClaimResistances {
         });
     }
 
-    private void removeClaimResistancesForChunk(Point chunk) {
-        long chunkKey = ChunkPos.toLong(chunk.x, chunk.y);
+    private void removeClaimResistancesForChunk(ChunkPos chunk) {
+        long chunkKey = ChunkPos.toLong(chunk.x, chunk.z);
         resistancesForChunks.remove(chunkKey);
         claimPointsForChunks.remove(chunkKey);
     }
