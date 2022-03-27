@@ -7,7 +7,8 @@
     "BeaconClaimPoint",
     "ClaimCoreItem",
     "GuildPlayerMixin",
-    "GuildSaveMixin"
+    "GuildSaveMixin",
+    "ServerPlayNetworkHandlerMixin"
   ],
   "client": [
   ],

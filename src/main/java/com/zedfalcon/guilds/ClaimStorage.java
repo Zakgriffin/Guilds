@@ -44,13 +44,22 @@ public class ClaimStorage {
         }
     }
 
-    public List<Claim> claimsAt(BlockPos blockPos) {
-        ChunkPos chunk = new ChunkPos(blockPos);
-        long chunkKey = ChunkPos.toLong(chunk.x, chunk.z);
-        if(!claims.containsKey(chunkKey)) {
-            return null;
+    @Nullable
+    public Claim getClaimAt(BlockPos blockPos) {
+        List<Claim> claimsAt = claimsAtChunk(new ChunkPos(blockPos));
+        if(claimsAt == null) return null;
+        for(Claim claim : claimsAt) {
+            if(claim.enclosesBlock(blockPos)) {
+                return claim;
+            }
         }
-        return claims.get(chunkKey);
+        return null;
+    }
+
+    @Nullable
+    public List<Claim> claimsAtChunk(ChunkPos chunk) {
+        long chunkKey = ChunkPos.toLong(chunk.x, chunk.z);
+        return claims.getOrDefault(chunkKey, null);
     }
 
     @Nullable

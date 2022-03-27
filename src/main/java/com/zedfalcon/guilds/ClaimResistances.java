@@ -157,7 +157,7 @@ public class ClaimResistances {
         return i < 0 ? i + sectionsY : i;
     }
 
-    private boolean inBounds(BlockPos blockPos) {
+    public boolean inBounds(BlockPos blockPos) {
         ChunkSectionPos chunkSectionPos = ChunkSectionPos.from(blockPos);
         long chunkKey = ChunkPos.toLong(chunkSectionPos.getX(), chunkSectionPos.getZ());
         if (!resistancesForChunks.containsKey(chunkKey)) return false;

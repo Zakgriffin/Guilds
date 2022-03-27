@@ -26,7 +26,6 @@ public class GuildCommand {
                 .then(CommandManager.literal("join").then(
                         CommandManager.argument("name", StringArgumentType.string()).executes(GuildCommand::join)))
                 .then(CommandManager.literal("showClaim").executes(GuildCommand::showClaim))
-                .then(CommandManager.literal("showResistances").executes(GuildCommand::showResistances))
         );
     }
 
@@ -130,19 +129,6 @@ public class GuildCommand {
 
         player.sendMessage(new LiteralText("Your guild does not own a claim here"), false);
 
-        return Command.SINGLE_SUCCESS;
-    }
-
-    public static int showResistances(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
-        Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
-        Claim claim = ClaimStorage.INSTANCE.getClaimForGuildAt(guild, player.getBlockPos());
-        if(claim == null) {
-            player.sendMessage(new LiteralText("Your guild does not own a claim here"), false);
-            return Command.SINGLE_SUCCESS;
-        }
-
-        ClaimVisualization.INSTANCE.showClaimResistancesToPlayer(claim, player);
         return Command.SINGLE_SUCCESS;
     }
 }
