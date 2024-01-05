@@ -1,6 +1,5 @@
 {
   "required": true,
-  "minVersion": "0.8",
   "package": "com.zedfalcon.guilds.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
@@ -8,9 +7,8 @@
     "ClaimCoreItem",
     "GuildPlayerMixin",
     "GuildSaveMixin",
-    "ServerPlayNetworkHandlerMixin"
-  ],
-  "client": [
+    "ServerPlayNetworkHandlerMixin",
+    "WorldChunkMixin"
   ],
   "injectors": {
     "defaultRequire": 1

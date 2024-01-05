@@ -9,10 +9,11 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -42,7 +43,7 @@ public class ClaimCoreItem {
         Guild guild = GuildStorage.INSTANCE.getGuildOfPlayer(player);
         if(guild == null) {
             player.getWorld().playSound(null, context.getBlockPos(), SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.BLOCKS, 1f, 2f);
-            player.sendMessage(new LiteralText("§cYou need to be part of a guild to create a claim"), true);
+            player.sendMessage(Text.literal("§cYou need to be part of a guild to create a claim"), true);
             info.setReturnValue(ActionResult.success(true));
             return;
         }
@@ -50,7 +51,8 @@ public class ClaimCoreItem {
         Claim claim = new Claim(blockPosUp, world, guild);
         guild.addClaim(claim);
 
-        ClaimCoreEntity claimCore = ClaimCoreEntity.spawnAt(world, blockPosUp, claim);
+        Vec3d entityPos = new Vec3d(blockPosUp.getX() + 0.5, blockPosUp.getY(), blockPosUp.getZ() + 0.5);
+        ClaimCoreEntity claimCore = ClaimCoreEntity.spawnAt(world, entityPos, claim);
         world.spawnEntity(claimCore);
 
         context.getStack().decrement(1);

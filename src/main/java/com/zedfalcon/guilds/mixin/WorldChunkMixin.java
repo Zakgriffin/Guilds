@@ -15,11 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class WorldChunkMixin {
     @Inject(method = "setBlockState", at = @At("RETURN"))
     private void setBlockState(BlockPos pos, BlockState state, boolean moved, CallbackInfoReturnable<BlockState> info) {
-//        WorldChunk worldChunk = (WorldChunk) (Object) this;
-//        ChunkSection chunkSection = worldChunk.getSection(worldChunk.getSectionIndex(pos.getY()));
-//        Claim claim = ClaimStorage.INSTANCE.getClaimAt(pos);
-//        if(claim == null) return;
-//
-
+        Claim claim = ClaimStorage.INSTANCE.getClaimAt(pos);
+        if(claim == null) return;
+        claim.updateClaimResistancesStartingFrom(pos);
     }
 }

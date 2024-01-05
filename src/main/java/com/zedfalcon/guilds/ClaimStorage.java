@@ -5,7 +5,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -44,32 +43,21 @@ public class ClaimStorage {
         }
     }
 
-    @Nullable
+//    @Nullable
     public Claim getClaimAt(BlockPos blockPos) {
         List<Claim> claimsAt = claimsAtChunk(new ChunkPos(blockPos));
         if(claimsAt == null) return null;
         for(Claim claim : claimsAt) {
-            if(claim.enclosesBlock(blockPos)) {
+            //if(claim.enclosesBlock(blockPos)) {
                 return claim;
-            }
+            //}
         }
         return null;
     }
 
-    @Nullable
+//    @Nullable
     public List<Claim> claimsAtChunk(ChunkPos chunk) {
         long chunkKey = ChunkPos.toLong(chunk.x, chunk.z);
         return claims.getOrDefault(chunkKey, null);
-    }
-
-    @Nullable
-    public Claim getClaimForGuildAt(Guild guild, BlockPos blockPos) {
-        List<Claim> claims = claimsAt(blockPos);
-        for(Claim claim : claims) {
-            if(guild.ownsClaim(claim)) {
-                return claim;
-            }
-        }
-        return null;
     }
 }

@@ -11,8 +11,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.*;
+import org.joml.Vector3f;
 
 import java.util.*;
 
@@ -128,13 +129,13 @@ public class ClaimVisualization {
             double dist = Math.sqrt(b1.getSquaredDistance(b2));
             BlockPos vec = b2.subtract(b1);
             BlockPos step = new BlockPos(
-                    vec.getX() / dist,
-                    vec.getY() / dist,
-                    vec.getZ() / dist
+                    (int) (vec.getX() / dist),
+                    (int) (vec.getY() / dist),
+                    (int) (vec.getZ() / dist)
             );
             for (int j = 0; j < dist; j++) {
                 BlockPos l = b1.add(step.multiply(j));
-                DustParticleEffect particle = new DustParticleEffect(new Vec3f(Vec3d.unpackRgb(0xFFFF00)), 1);
+                DustParticleEffect particle = new DustParticleEffect(new Vector3f(0xFFFF00), 1);
 
                 ((ServerWorld) claim.getWorld()).spawnParticles(player, particle, true, l.getX(), l.getY(), l.getZ(), 1, 0, 0, 0, 0);
             }
@@ -152,7 +153,7 @@ public class ClaimVisualization {
     public void updateVisibleClaimResistancesToPlayer(ServerPlayerEntity player) {
         ClaimVisualizationInfo info = playerClaimVisualizationInfos.get(player);
 
-        for(BlockPos previousShownBlock : info.previousShownBlockResistances) {
+        for (BlockPos previousShownBlock : info.previousShownBlockResistances) {
             sendBlockPacket(player, previousShownBlock, player.getWorld().getBlockState(previousShownBlock));
         }
         info.previousShownBlockResistances.clear();
@@ -163,7 +164,7 @@ public class ClaimVisualization {
             for (int x = -squareRadius; x <= squareRadius; x++) {
                 for (int z = -squareRadius; z <= squareRadius; z++) {
                     BlockPos pos = player.getBlockPos().add(x, y, z);
-                    if(!claimResistances.inBounds(pos)) continue;
+                    if (!claimResistances.inBounds(pos)) continue;
 
                     int resistance = claimResistances.getResistanceAt(pos);
                     if (resistance >= info.lowResistanceBound && resistance <= info.highResistanceBound) {
@@ -186,16 +187,22 @@ public class ClaimVisualization {
             delta += hotBarSize;
         }
 
-        if(info.changingLowerBound) {
-            int newBound = info.lowResistanceBound + delta;
-            info.lowResistanceBound = newBound;
-            player.sendMessage(new LiteralText("Low Resistance Bound = " + newBound), true);
-        } else {
-            int newBound = info.highResistanceBound + delta;
-            info.highResistanceBound = newBound;
-            player.sendMessage(new LiteralText("High Resistance Bound = " + newBound), true);
-        }
+//        if(info.changingLowerBound) {
+        int newLowBound = info.lowResistanceBound + delta;
+        info.lowResistanceBound = newLowBound;
+        player.sendMessage(Text.literal("Low Resistance Bound = " + newLowBound), true);
+//        } else {
+        int newHighBound = info.highResistanceBound + delta;
+        info.highResistanceBound = newHighBound;
+        player.sendMessage(Text.literal("High Resistance Bound = " + newHighBound), true);
+//        }
 
         updateVisibleClaimResistancesToPlayer(player);
+    }
+
+    public void toggleResistanceBounds(ServerPlayerEntity player) {
+        ClaimVisualizationInfo info = playerClaimVisualizationInfos.get(player);
+
+        info.changingLowerBound = !info.changingLowerBound;
     }
 }

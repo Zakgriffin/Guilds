@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.zedfalcon.guilds.helpers.BlockPosTransforms;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
+import net.minecraft.block.Block;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -53,33 +54,38 @@ public class Claim {
         return claimResistances;
     }
 
+    public void updateClaimResistancesStartingFrom(BlockPos blockPos) {
+        claimResistances.addToUpdateQueue(blockPos);
+        claimResistances.updateFromQueue();
+    }
+
     public void addClaimPoint(ClaimPoint claimPoint) {
         claimPoints.add(claimPoint);
 
         List<BlockPos> enclosedBlocks = findEnclosedBlocks();
-        System.out.println("enclosedBlocks: " + enclosedBlocks);
+//        System.out.println("enclosedBlocks: " + enclosedBlocks);
         List<Point> outlineBlockPoints = getOutlinePoints(enclosedBlocks);
-        System.out.println("outlineBlockPoints: " + outlineBlockPoints);
+//        System.out.println("outlineBlockPoints: " + outlineBlockPoints);
         outlineBlocks = mapPointsToOutlineBlocks(outlineBlockPoints, enclosedBlocks);
-        System.out.println("outlineBlocks: " + outlineBlocks);
+//        System.out.println("outlineBlocks: " + outlineBlocks);
         List<Point> outlineChunkPoints = outlineBlockPoints.stream().map(p -> new Point(p.x >> 4, p.y >> 4)).toList();
-        System.out.println("outlineChunkPoints: " + outlineChunkPoints);
+//        System.out.println("outlineChunkPoints: " + outlineChunkPoints);
 
         Set<ChunkPos> oldTouchingChunks = touchingChunks;
         Set<Point> bonk = Geometry.findAllPointsWithinPolygonInclusive(outlineChunkPoints);
-        System.out.println("bonk: " + bonk);
+//        System.out.println("bonk: " + bonk);
         Set<ChunkPos> newTouchingChunks = bonk.stream().map(p -> new ChunkPos(p.x, p.y)).collect(Collectors.toSet());
 
-        System.out.println("newTouchingChunks: " + newTouchingChunks);
+//        System.out.println("newTouchingChunks: " + newTouchingChunks);
 
         newTouchingChunks.removeAll(oldTouchingChunks);
         Set<ChunkPos> chunksToAdd = newTouchingChunks;
-        System.out.println("chunksToAdd: " + chunksToAdd);
+//        System.out.println("chunksToAdd: " + chunksToAdd);
 
         ClaimStorage.INSTANCE.addClaimToChunks(this, chunksToAdd);
-        System.out.println("BING!");
+//        System.out.println("BING!");
         claimResistances.addClaimPointWithChunks(claimPoint, chunksToAdd);
-        System.out.println("BONG!");
+//        System.out.println("BONG!");
         touchingChunks = newTouchingChunks;
     }
 

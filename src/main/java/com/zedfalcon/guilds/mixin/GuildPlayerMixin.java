@@ -10,11 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import javax.annotation.Nullable;
-
 @Mixin(ServerPlayerEntity.class)
 public class GuildPlayerMixin implements GuildPlayer {
-    @Nullable
+//    @Nullable
     @Unique
     private Guild guild;
 
@@ -24,13 +22,13 @@ public class GuildPlayerMixin implements GuildPlayer {
     }
 
     @Override
-    @Nullable
+//    @Nullable
     public Guild getGuild() {
         return guild;
     }
 
     @Override
-    public void setGuild(@Nullable Guild guild) {
+    public void setGuild(Guild guild) {
         this.guild = guild;
     }
 }

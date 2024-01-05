@@ -1,6 +1,5 @@
 package com.zedfalcon.guilds.helpers;
 
-import javax.annotation.Nullable;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,7 @@ public class Geometry {
 //
 //    }
 
-    @Nullable
+//    @Nullable
     public static List<Point> convexHull(List<Point> points) {
         System.out.println("convexHull?: " + points);
         if (points.size() < 3) return null;

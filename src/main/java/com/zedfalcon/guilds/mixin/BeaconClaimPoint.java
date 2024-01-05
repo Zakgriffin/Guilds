@@ -16,15 +16,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import javax.annotation.Nullable;
-
-
 @Mixin(BeaconBlock.class)
 public class BeaconClaimPoint  {
     private static String CLAIM_BEACON_NAME = "§6Claim Beacon";
 
     @Unique
-    @Nullable
+//    @Nullable
     private Claim claim;
 
     public void onPlaced(World world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack itemStack) {

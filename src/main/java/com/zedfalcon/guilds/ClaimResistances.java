@@ -5,6 +5,7 @@ import com.zedfalcon.guilds.helpers.BlockPosTransforms;
 import com.zedfalcon.guilds.helpers.Traversal;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minecraft.block.Block;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
@@ -38,6 +39,10 @@ public class ClaimResistances {
 
     public ClaimResistances(World world) {
         this(world, new Long2ObjectOpenHashMap<>(), new Long2ObjectOpenHashMap<>());
+    }
+
+    public void addToUpdateQueue(BlockPos blockPos) {
+        blocksToUpdate.add(blockPos);
     }
 
     public void addClaimPointWithChunks(ClaimPoint claimPoint, Set<ChunkPos> chunksToAdd) {
@@ -171,7 +176,7 @@ public class ClaimResistances {
         if (world.getBlockState(from).isAir()) {
             return 1;
         } else {
-            return 10;
+            return 20;
         }
     }
 
