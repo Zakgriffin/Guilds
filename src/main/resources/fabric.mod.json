@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "com.zedfalcon.guilds.Guilds"
+    ],
+    "fabric-datagen": [
+      "com.zedfalcon.guilds.datagen.DataGenInit"
     ]
   },
   "mixins": [

@@ -1,26 +1,18 @@
 package com.zedfalcon.guilds.helpers;
 
-import java.awt.Point;
+import net.minecraft.util.math.Vec2f;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class Geometry {
-//    public static int orientation(Point p, Point q, Point r) {
-//        int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-//
-//        if (val == 0) return 0;
-//        return (val > 0) ? 1 : 2;
-//
-//    }
 
-//    @Nullable
-    public static List<Point> convexHull(List<Point> points) {
-        System.out.println("convexHull?: " + points);
+    @Nullable
+    public static List<Vec2f> convexHull(List<Vec2f> points) {
         if (points.size() < 3) return null;
 
-        List<Point> hull = new ArrayList<>();
+        List<Vec2f> hull = new ArrayList<>();
         int l = 0;
         for (int i = 1; i < points.size(); i++) {
             if (points.get(i).x < points.get(l).x) {
@@ -42,47 +34,7 @@ public class Geometry {
         return hull;
     }
 
-    public static Set<Point> findAllPointsWithinPolygonInclusive(List<Point> polygonPoints) {
-        Traversal<Point> traversal = new Traversal<>() {
-            @Override
-            protected Set<Point> getSuccessors(Point point) {
-                return getAdjacentPoints(point).stream()
-                        .filter((p) -> !super.visited.contains(p))
-                        .filter((p) -> pointWithinPolygonInclusive(p, polygonPoints)).collect(Collectors.toSet());
-            }
-        };
-        traversal.addToVisit(polygonPoints.get(0));
-        traversal.traverse();
-
-        return traversal.getVisited();
-    }
-
-    public static Set<Point> getAdjacentPoints(Point point) {
-        return Set.of(
-                new Point(point.x + 1, point.y),
-                new Point(point.x - 1, point.y),
-                new Point(point.x, point.y + 1),
-                new Point(point.x, point.y - 1)
-        );
-    }
-
-//    public static boolean pointWithinPolygonInclusive(Point toTest, List<Point> polygonPoint) {
-//        boolean isWithin = false;
-//        int i;
-//        int j;
-//        for (i = 0, j = polygonPoint.size() - 1; i < polygonPoint.size(); j = i++) {
-//            if ((polygonPoint.get(i).y >= toTest.y) != (polygonPoint.get(j).y >= toTest.y)
-//                    && (toTest.x <= (polygonPoint.get(j).x - polygonPoint.get(i).x)
-//                    * (toTest.y - polygonPoint.get(i).y)
-//                    / (polygonPoint.get(j).y - polygonPoint.get(i).y)
-//                    + polygonPoint.get(i).x)) {
-//                isWithin = !isWithin;
-//            }
-//        }
-//        return isWithin;
-//    }
-
-    public static boolean pointWithinPolygonInclusive(Point p, List<Point> polygon) {
+    public static boolean pointWithinPolygonInclusive(Vec2f p, List<Vec2f> polygon) {
         // There must be at least 3 vertices in polygon[]
         int n = polygon.size();
         if (n < 3) {
@@ -92,7 +44,7 @@ public class Geometry {
         // Create a point for line segment from p to infinite
         // TODO no...
         int INF = 1000000;
-        Point extreme = new Point(INF, p.y);
+        Vec2f extreme = new Vec2f(INF, p.y);
 
         // Count intersections of the above line
         // with sides of polygon
@@ -119,7 +71,7 @@ public class Geometry {
         return (count % 2 == 1);
     }
 
-    static boolean onSegment(Point p, Point q, Point r) {
+    static boolean onSegment(Vec2f p, Vec2f q, Vec2f r) {
         return q.x <= Math.max(p.x, r.x) &&
                 q.x >= Math.min(p.x, r.x) &&
                 q.y <= Math.max(p.y, r.y) &&
@@ -129,8 +81,8 @@ public class Geometry {
     // 0 --> p, q and r are collinear
     // 1 --> Clockwise
     // 2 --> Counterclockwise
-    static int orientation(Point p, Point q, Point r) {
-        int val = (q.y - p.y) * (r.x - q.x)
+    static int orientation(Vec2f p, Vec2f q, Vec2f r) {
+        float val = (q.y - p.y) * (r.x - q.x)
                 - (q.x - p.x) * (r.y - q.y);
 
         if (val == 0) {
@@ -139,7 +91,7 @@ public class Geometry {
         return (val > 0) ? 1 : 2;
     }
 
-    static boolean doIntersect(Point p1, Point q1, Point p2, Point q2) {
+    static boolean doIntersect(Vec2f p1, Vec2f q1, Vec2f p2, Vec2f q2) {
         int o1 = orientation(p1, q1, p2);
         int o2 = orientation(p1, q1, q2);
         int o3 = orientation(p2, q2, p1);

@@ -1,10 +1,9 @@
-package com.zedfalcon.guilds;
+package com.zedfalcon.guilds.claim;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.util.math.BlockPos;
 
-import java.awt.Point;
 import java.util.Set;
 
 public class ClaimPoint {

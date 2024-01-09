@@ -1,6 +1,7 @@
 package com.zedfalcon.guilds;
 
 import com.google.gson.JsonObject;
+import com.zedfalcon.guilds.claim.ClaimPoint;
 
 public class Vault {
     private final ClaimPoint claimPoint;

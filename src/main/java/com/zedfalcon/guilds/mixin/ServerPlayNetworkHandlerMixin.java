@@ -42,7 +42,7 @@ public class ServerPlayNetworkHandlerMixin {
 
         if(player.getStackInHand(Hand.OFF_HAND).getItem() == Items.BLAZE_ROD) {
             if(ClaimVisualization.INSTANCE.isShowingForPlayer(player)) {
-                ClaimVisualization.INSTANCE.toggleResistanceBounds(player);
+                ClaimVisualization.INSTANCE.toggleAdjustingBounds(player);
             }
         }
     }

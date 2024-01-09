@@ -1,5 +1,7 @@
 package com.zedfalcon.guilds;
 
+import com.zedfalcon.guilds.claim.Claim;
+import com.zedfalcon.guilds.claim.BlastShieldReaches;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -13,22 +15,24 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.*;
-import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.List;
+
+import static net.minecraft.world.Heightmap.Type.WORLD_SURFACE;
 
 class ClaimVisualizationInfo {
     public final Claim claim;
-    public final Set<BlockPos> previousShownBlockResistances;
-    public int lowResistanceBound;
-    public int highResistanceBound;
+    public final Set<BlockPos> previousShownBlastSheildReaches;
+    public int lowBlastShieldReachBound;
+    public int highBlastShieldReachBound;
     public boolean changingLowerBound;
 
-    public ClaimVisualizationInfo(Claim claim, Set<BlockPos> previousShownBlockResistances) {
+    public ClaimVisualizationInfo(Claim claim, Set<BlockPos> previousShownBlastSheildReaches) {
         this.claim = claim;
-        this.previousShownBlockResistances = previousShownBlockResistances;
-        this.lowResistanceBound = 0;
-        this.highResistanceBound = 0;
+        this.previousShownBlastSheildReaches = previousShownBlastSheildReaches;
+        this.lowBlastShieldReachBound = 0;
+        this.highBlastShieldReachBound = 0;
         this.changingLowerBound = false;
     }
 }
@@ -82,39 +86,8 @@ public class ClaimVisualization {
         playerClaimVisualizationInfos.values().removeIf(info -> info.claim == claim);
     }
 
-//    public void showClaimResistanceParticle(BlockPos blockPos, int resistance, ServerPlayerEntity player, World world) {
-//        // map [0, 10] -> [0, 1]
-//        int c = Color.HSBtoRGB(resistance / 10f, 1, 1);
-//        DustParticleEffect particle = new DustParticleEffect(new Vec3f(Vec3d.unpackRgb(c)), 0.3f);
-//
-//        Vec3d v = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
-//
-//        double[] p = new double[]{0.45, 0, 0.45};
-//        int[] flops = new int[]{1, -1};
-//        for (int a : flops) {
-//            for (int b : flops) {
-//                double[] q = new double[]{p[0] * a, p[1], p[2] * b};
-//                for (int i = 0; i < p.length; i++) {
-//                    double x = q[i];
-//                    double y = q[(i + 1) % 3];
-//                    double z = q[(i + 2) % 3];
-//                    ((ServerWorld) world).spawnParticles(player, particle, true,
-//                            v.getX() + x, v.getY() + y, v.getZ() + z,
-//                            10,
-//                            x == 0 ? 0.2 : 0, y == 0 ? 0.2 : 0, z == 0 ? 0.2 : 0,
-//                            0
-//                    );
-//                }
-//            }
-//        }
-//    }
-
-    public void showClaimResistance(BlockPos blockPos, int resistance, ServerPlayerEntity player) {
-        sendBlockPacket(player, blockPos, blockStateFromResistance(resistance));
-    }
-
-    private BlockState blockStateFromResistance(int resistance) {
-        return GLASS_BLOCK_STATES[resistance % GLASS_BLOCK_STATES.length];
+    private BlockState blockStateFromBlastShieldReach(int blastShieldReach) {
+        return GLASS_BLOCK_STATES[blastShieldReach % GLASS_BLOCK_STATES.length];
     }
 
     private void sendBlockPacket(ServerPlayerEntity player, BlockPos blockPos, BlockState blockState) {
@@ -122,54 +95,51 @@ public class ClaimVisualization {
     }
 
     public void showClaimOutlineTo(ServerPlayerEntity player, Claim claim) {
-        List<BlockPos> outlineBlocks = claim.getOutlineBlocks();
+        List<Vec2f> outlineBlocks = claim.getOutlinePoints();
         for (int i = 0; i < outlineBlocks.size(); i++) {
-            BlockPos b1 = outlineBlocks.get(i);
-            BlockPos b2 = outlineBlocks.get((i + 1) % outlineBlocks.size());
-            double dist = Math.sqrt(b1.getSquaredDistance(b2));
-            BlockPos vec = b2.subtract(b1);
-            BlockPos step = new BlockPos(
-                    (int) (vec.getX() / dist),
-                    (int) (vec.getY() / dist),
-                    (int) (vec.getZ() / dist)
-            );
-            for (int j = 0; j < dist; j++) {
-                BlockPos l = b1.add(step.multiply(j));
-                DustParticleEffect particle = new DustParticleEffect(new Vector3f(0xFFFF00), 1);
+            Vec2f p1 = outlineBlocks.get(i);
+            Vec2f p2 = outlineBlocks.get((i + 1) % outlineBlocks.size());
+            float dist = MathHelper.sqrt(p2.distanceSquared(p1));
+            Vec2f step = p2.add(p1.negate()).normalize();
+            for (int j = 0; j < dist; j += 1) {
+                Vec2f l = p1.add(step.multiply(j));
+                DustParticleEffect particle = new DustParticleEffect(Vec3d.unpackRgb(0xFFFF00).toVector3f(), 1);
 
-                ((ServerWorld) claim.getWorld()).spawnParticles(player, particle, true, l.getX(), l.getY(), l.getZ(), 1, 0, 0, 0, 0);
+                ServerWorld world = claim.getWorld();
+                int topY = world.getTopY(WORLD_SURFACE, (int) l.x, (int) l.y);
+                world.spawnParticles(player, particle, true, l.x, topY, l.y, 1, 0, 0, 0, 0);
             }
         }
     }
 
     public void updateLowResistanceBound(ServerPlayerEntity player, int newLowBound) {
-        playerClaimVisualizationInfos.get(player).lowResistanceBound = newLowBound;
+        playerClaimVisualizationInfos.get(player).lowBlastShieldReachBound = newLowBound;
     }
 
     public void updateHighResistanceBound(ServerPlayerEntity player, int newHighBound) {
-        playerClaimVisualizationInfos.get(player).highResistanceBound = newHighBound;
+        playerClaimVisualizationInfos.get(player).highBlastShieldReachBound = newHighBound;
     }
 
-    public void updateVisibleClaimResistancesToPlayer(ServerPlayerEntity player) {
+    public void updateVisibleClaimBlastShieldReachesToPlayer(ServerPlayerEntity player) {
         ClaimVisualizationInfo info = playerClaimVisualizationInfos.get(player);
 
-        for (BlockPos previousShownBlock : info.previousShownBlockResistances) {
+        for (BlockPos previousShownBlock : info.previousShownBlastSheildReaches) {
             sendBlockPacket(player, previousShownBlock, player.getWorld().getBlockState(previousShownBlock));
         }
-        info.previousShownBlockResistances.clear();
+        info.previousShownBlastSheildReaches.clear();
 
         int squareRadius = 20;
-        ClaimResistances claimResistances = info.claim.getClaimResistances();
+        BlastShieldReaches blastShieldReaches = info.claim.getBlastShieldReaches();
         for (int y = -squareRadius; y <= squareRadius; y++) {
             for (int x = -squareRadius; x <= squareRadius; x++) {
                 for (int z = -squareRadius; z <= squareRadius; z++) {
                     BlockPos pos = player.getBlockPos().add(x, y, z);
-                    if (!claimResistances.inBounds(pos)) continue;
+                    if (!blastShieldReaches.inBounds(pos.asLong())) continue;
 
-                    int resistance = claimResistances.getResistanceAt(pos);
-                    if (resistance >= info.lowResistanceBound && resistance <= info.highResistanceBound) {
-                        sendBlockPacket(player, pos, blockStateFromResistance(resistance));
-                        info.previousShownBlockResistances.add(pos);
+                    int blastShieldReach = blastShieldReaches.getBlastShieldReachAt(pos.asLong());
+                    if (blastShieldReach >= info.lowBlastShieldReachBound && blastShieldReach <= info.highBlastShieldReachBound) {
+                        sendBlockPacket(player, pos, blockStateFromBlastShieldReach(blastShieldReach));
+                        info.previousShownBlastSheildReaches.add(pos);
                     }
                 }
             }
@@ -188,19 +158,19 @@ public class ClaimVisualization {
         }
 
 //        if(info.changingLowerBound) {
-        int newLowBound = info.lowResistanceBound + delta;
-        info.lowResistanceBound = newLowBound;
-        player.sendMessage(Text.literal("Low Resistance Bound = " + newLowBound), true);
+        int newLowBound = info.lowBlastShieldReachBound + delta;
+        info.lowBlastShieldReachBound = newLowBound;
+        player.sendMessage(Text.literal("Low Blast Shield Reach Bound = " + newLowBound), true);
 //        } else {
-        int newHighBound = info.highResistanceBound + delta;
-        info.highResistanceBound = newHighBound;
-        player.sendMessage(Text.literal("High Resistance Bound = " + newHighBound), true);
+        int newHighBound = info.highBlastShieldReachBound + delta;
+        info.highBlastShieldReachBound = newHighBound;
+        player.sendMessage(Text.literal("High Blast Shield Reach Bound = " + newHighBound), true);
 //        }
 
-        updateVisibleClaimResistancesToPlayer(player);
+        updateVisibleClaimBlastShieldReachesToPlayer(player);
     }
 
-    public void toggleResistanceBounds(ServerPlayerEntity player) {
+    public void toggleAdjustingBounds(ServerPlayerEntity player) {
         ClaimVisualizationInfo info = playerClaimVisualizationInfos.get(player);
 
         info.changingLowerBound = !info.changingLowerBound;
