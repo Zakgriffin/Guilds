@@ -1,10 +1,9 @@
 package com.zedfalcon.guilds.datagen;
 
-import com.zedfalcon.guilds.Guilds;
+import com.zedfalcon.guilds.item.GuildsItems;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
 import net.minecraft.advancement.criterion.InventoryChangedCriterion;
-import net.minecraft.block.Blocks;
 import net.minecraft.data.server.recipe.RecipeExporter;
 import net.minecraft.data.server.recipe.ShapedRecipeJsonBuilder;
 import net.minecraft.item.Items;
@@ -17,7 +16,7 @@ class RecipesProvider extends FabricRecipeProvider {
 
     @Override
     public void generate(RecipeExporter exporter) {
-        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, Guilds.CLAIM_POINT_BLOCK, 1)
+        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, GuildsItems.CLAIM_POINT, 1)
                 .pattern("eee")
                 .pattern("eee")
                 .pattern("eee")

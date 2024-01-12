@@ -23,14 +23,14 @@ import static net.minecraft.world.Heightmap.Type.WORLD_SURFACE;
 
 class ClaimVisualizationInfo {
     public final Claim claim;
-    public final Set<BlockPos> previousShownBlastSheildReaches;
+    public final Set<BlockPos> previousShownBlastShieldReaches;
     public int lowBlastShieldReachBound;
     public int highBlastShieldReachBound;
     public boolean changingLowerBound;
 
-    public ClaimVisualizationInfo(Claim claim, Set<BlockPos> previousShownBlastSheildReaches) {
+    public ClaimVisualizationInfo(Claim claim, Set<BlockPos> previousShownBlastShieldReaches) {
         this.claim = claim;
-        this.previousShownBlastSheildReaches = previousShownBlastSheildReaches;
+        this.previousShownBlastShieldReaches = previousShownBlastShieldReaches;
         this.lowBlastShieldReachBound = 0;
         this.highBlastShieldReachBound = 0;
         this.changingLowerBound = false;
@@ -123,10 +123,10 @@ public class ClaimVisualization {
     public void updateVisibleClaimBlastShieldReachesToPlayer(ServerPlayerEntity player) {
         ClaimVisualizationInfo info = playerClaimVisualizationInfos.get(player);
 
-        for (BlockPos previousShownBlock : info.previousShownBlastSheildReaches) {
+        for (BlockPos previousShownBlock : info.previousShownBlastShieldReaches) {
             sendBlockPacket(player, previousShownBlock, player.getWorld().getBlockState(previousShownBlock));
         }
-        info.previousShownBlastSheildReaches.clear();
+        info.previousShownBlastShieldReaches.clear();
 
         int squareRadius = 20;
         BlastShieldReaches blastShieldReaches = info.claim.getBlastShieldReaches();
@@ -134,12 +134,12 @@ public class ClaimVisualization {
             for (int x = -squareRadius; x <= squareRadius; x++) {
                 for (int z = -squareRadius; z <= squareRadius; z++) {
                     BlockPos pos = player.getBlockPos().add(x, y, z);
-                    if (!blastShieldReaches.inBounds(pos.asLong())) continue;
+                    if (!blastShieldReaches.inBounds(pos)) continue;
 
-                    int blastShieldReach = blastShieldReaches.getBlastShieldReachAt(pos.asLong());
+                    int blastShieldReach = blastShieldReaches.getBlastShieldReachAt(pos);
                     if (blastShieldReach >= info.lowBlastShieldReachBound && blastShieldReach <= info.highBlastShieldReachBound) {
                         sendBlockPacket(player, pos, blockStateFromBlastShieldReach(blastShieldReach));
-                        info.previousShownBlastSheildReaches.add(pos);
+                        info.previousShownBlastShieldReaches.add(pos);
                     }
                 }
             }

@@ -11,6 +11,7 @@ import java.util.*;
 public class ClaimStorage {
     public static final ClaimStorage INSTANCE = new ClaimStorage();
 
+    private Set<Claim> claims = new HashSet<>();
     private final Map<Claim, Set<ChunkPos>> claimToChunks = new HashMap<>();
     private final Long2ObjectMap<Set<Claim>> chunkToClaims = new Long2ObjectOpenHashMap<>();
 
@@ -34,15 +35,31 @@ public class ClaimStorage {
         claimToChunks.put(claim, chunks);
     }
 
+    public Set<ChunkPos> getChunksForClaim(Claim claim) {
+        return claimToChunks.get(claim);
+    }
+
     @Nullable
     public Claim getClaimAt(BlockPos blockPos) {
         Set<Claim> claims = chunkToClaims.get(new ChunkPos(blockPos).toLong());
         if (claims == null) return null;
 
         for (Claim claim : claims) {
-            if(claim.enclosesBlock(blockPos)) {
+            if (claim.enclosesBlock(blockPos)) {
                 return claim;
             }
+        }
+        return null;
+    }
+
+    public void addClaim(Claim claim) {
+        claims.add(claim);
+    }
+
+    @Nullable
+    public Claim getClaimFromUuid(UUID uuid) {
+        for (Claim claim : claims) {
+            if (claim.getUuid().equals(uuid)) return claim;
         }
         return null;
     }

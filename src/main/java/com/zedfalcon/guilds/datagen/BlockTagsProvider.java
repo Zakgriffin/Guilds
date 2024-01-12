@@ -1,6 +1,6 @@
 package com.zedfalcon.guilds.datagen;
 
-import com.zedfalcon.guilds.Guilds;
+import com.zedfalcon.guilds.block.GuildsBlocks;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.registry.RegistryWrapper;
@@ -16,6 +16,6 @@ class BlockTagsProvider extends FabricTagProvider.BlockTagProvider {
     @Override
     protected void configure(RegistryWrapper.WrapperLookup arg) {
         this.getOrCreateTagBuilder(BlockTags.PICKAXE_MINEABLE)
-                .add(Guilds.CLAIM_POINT_BLOCK);
+                .add(GuildsBlocks.CLAIM_POINT);
     }
 }

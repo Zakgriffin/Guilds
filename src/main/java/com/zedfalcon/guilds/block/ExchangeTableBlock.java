@@ -1,4 +1,4 @@
-package com.zedfalcon.guilds.blocks;
+package com.zedfalcon.guilds.block;
 
 import com.mojang.serialization.MapCodec;
 import com.zedfalcon.guilds.ExchangeScreenHandler;

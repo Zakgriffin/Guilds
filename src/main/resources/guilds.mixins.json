@@ -3,6 +3,7 @@
   "package": "com.zedfalcon.guilds.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "BlockDisplayEntityInvoker",
     "GuildPlayerMixin",
     "GuildSaveMixin",
     "ServerPlayNetworkHandlerMixin",

@@ -1,5 +1,6 @@
 package com.zedfalcon.guilds;
 
+import com.zedfalcon.guilds.block.GuildsBlocks;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -49,19 +50,19 @@ public class ExchangeScreenHandler extends AbstractRecipeScreenHandler<RecipeInp
 
         int i;
         int j;
-        for(i = 0; i < 3; ++i) {
-            for(j = 0; j < 3; ++j) {
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 3; ++j) {
                 this.addSlot(new Slot(this.input, j + i * 3, 30 + j * 18, 17 + i * 18));
             }
         }
 
-        for(i = 0; i < 3; ++i) {
-            for(j = 0; j < 9; ++j) {
+        for (i = 0; i < 3; ++i) {
+            for (j = 0; j < 9; ++j) {
                 this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
             }
         }
 
-        for(i = 0; i < 9; ++i) {
+        for (i = 0; i < 9; ++i) {
             this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
         }
 
@@ -69,12 +70,12 @@ public class ExchangeScreenHandler extends AbstractRecipeScreenHandler<RecipeInp
 
     protected static void updateResult(ScreenHandler handler, World world, PlayerEntity player, RecipeInputInventory craftingInventory, CraftingResultInventory resultInventory) {
         if (!world.isClient) {
-            ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)player;
+            ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity) player;
             ItemStack itemStack = ItemStack.EMPTY;
             Optional<RecipeEntry<CraftingRecipe>> optional = world.getServer().getRecipeManager().getFirstMatch(RecipeType.CRAFTING, craftingInventory, world);
             if (optional.isPresent()) {
-                RecipeEntry<CraftingRecipe> recipeEntry = (RecipeEntry)optional.get();
-                CraftingRecipe craftingRecipe = (CraftingRecipe)recipeEntry.value();
+                RecipeEntry<CraftingRecipe> recipeEntry = (RecipeEntry) optional.get();
+                CraftingRecipe craftingRecipe = (CraftingRecipe) recipeEntry.value();
                 if (resultInventory.shouldCraftRecipe(world, serverPlayerEntity, recipeEntry)) {
                     ItemStack itemStack2 = craftingRecipe.craft(craftingInventory, world.getRegistryManager());
                     if (itemStack2.isItemEnabled(world.getEnabledFeatures())) {
@@ -116,12 +117,12 @@ public class ExchangeScreenHandler extends AbstractRecipeScreenHandler<RecipeInp
     }
 
     public boolean canUse(PlayerEntity player) {
-        return canUse(this.context, player, Guilds.EXCHANGE_TABLE_BLOCK);
+        return canUse(this.context, player, GuildsBlocks.CLAIM_POINT);
     }
 
     public ItemStack quickMove(PlayerEntity player, int slot) {
         ItemStack itemStack = ItemStack.EMPTY;
-        Slot slot2 = (Slot)this.slots.get(slot);
+        Slot slot2 = (Slot) this.slots.get(slot);
         if (slot2 != null && slot2.hasStack()) {
             ItemStack itemStack2 = slot2.getStack();
             itemStack = itemStack2.copy();

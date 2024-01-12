@@ -53,6 +53,7 @@ public class GuildStorage {
 
     @Nullable
     public Guild findPlayerGuild(ServerPlayerEntity player) {
+        // todo probably some storing in nbt data
         for (Guild guild : guilds) {
             if (guild.hasMember(player)) {
                 return guild;

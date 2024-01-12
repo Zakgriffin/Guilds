@@ -16,36 +16,41 @@ import net.minecraft.util.math.Vec2f;
 import java.util.*;
 
 public class Claim {
+    private final UUID id;
     private final Set<ClaimPoint> claimPoints;
     private final Vault vault;
     private final BlastShieldReaches blastShieldReaches;
     private final ServerWorld world;
+    private String name;
     private List<Vec2f> outlinePoints;
 
-    public Claim(Set<ClaimPoint> claimPoints, Vault vault, BlastShieldReaches blastShieldReaches, ServerWorld world) {
+    public Claim(UUID id, Set<ClaimPoint> claimPoints, Vault vault, BlastShieldReaches blastShieldReaches, ServerWorld world) {
+        this.id = id;
         this.claimPoints = claimPoints;
         this.vault = vault;
         this.blastShieldReaches = blastShieldReaches;
         this.world = world;
+        ClaimStorage.INSTANCE.addClaim(this);
 
         recalculateOutlinePoints();
     }
 
     public Claim(ServerWorld world) {
-        this(new HashOrderedTreeSet<>(), null, new BlastShieldReaches(world), world);
+        this(UUID.randomUUID(), new HashOrderedTreeSet<>(), null, new BlastShieldReaches(world), world);
     }
 
-    private void addClaimPoint(ClaimPoint claimPoint) {
+    public void addClaimPoint(ClaimPoint claimPoint) {
         claimPoints.add(claimPoint);
-        updateClaimPoints();
+        updateClaimArea();
+        blastShieldReaches.addClaimPoint(claimPoint, ClaimStorage.INSTANCE.getChunksForClaim(this));
     }
 
-    private void removeClaimPoint(ClaimPoint claimPoint) {
+    public void removeClaimPoint(ClaimPoint claimPoint) {
         claimPoints.remove(claimPoint);
-        updateClaimPoints();
+        updateClaimArea();
     }
 
-    private void updateClaimPoints() {
+    private void updateClaimArea() {
         recalculateOutlinePoints();
         Set<ChunkPos> chunks = getEnclosedChunks();
         ClaimStorage.INSTANCE.addClaimToChunks(this, chunks);
@@ -104,6 +109,14 @@ public class Claim {
         return Geometry.pointWithinPolygonInclusive(new Vec2f(pos.getX(), pos.getZ()), outlinePoints);
     }
 
+    public UUID getUuid() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
     public BlastShieldReaches getBlastShieldReaches() {
         return blastShieldReaches;
     }
@@ -141,7 +154,9 @@ public class Claim {
         // guild
         Guild guild = null;
 
-        return new Claim(claimPoints, vault, blastShieldReaches, world);
+        UUID id = null;
+
+        return new Claim(id, claimPoints, vault, blastShieldReaches, world);
     }
 
     public JsonObject toJson() {
