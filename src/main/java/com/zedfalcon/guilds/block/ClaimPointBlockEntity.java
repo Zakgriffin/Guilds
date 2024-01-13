@@ -1,6 +1,7 @@
 package com.zedfalcon.guilds.block;
 
 import com.zedfalcon.guilds.Guilds;
+import com.zedfalcon.guilds.claim.BlastShieldReaches;
 import com.zedfalcon.guilds.claim.Claim;
 import com.zedfalcon.guilds.claim.ClaimStorage;
 import net.minecraft.block.BlockState;
@@ -33,9 +34,7 @@ public class ClaimPointBlockEntity extends BlockEntity {
     }
 
     public static void serverTick(World world, BlockPos pos, BlockState state, ClaimPointBlockEntity blockEntity) {
-        if(blockEntity.claim == null) return;
 
-        blockEntity.claim.getBlastShieldReaches().tickBetter();
     }
 
     public Claim getClaim() {

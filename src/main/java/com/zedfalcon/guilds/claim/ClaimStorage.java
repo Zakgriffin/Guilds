@@ -52,6 +52,12 @@ public class ClaimStorage {
         return null;
     }
 
+    public void tickAllClaims() {
+        for(Claim claim : claims) {
+            claim.tick();
+        }
+    }
+
     public void addClaim(Claim claim) {
         claims.add(claim);
     }

@@ -1,16 +1,10 @@
 package com.zedfalcon.guilds.claim;
 
 import com.google.gson.JsonObject;
-import com.zedfalcon.guilds.mixin.BlockDisplayEntityInvoker;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -79,50 +73,58 @@ public class BlastShieldReaches {
         int minAdjacentReach = Integer.MAX_VALUE;
         for (BlockPos offset : ADJACENT_OFFSETS) {
             BlockPos adjacent = pos.add(offset);
-            if (!inBounds(adjacent)) continue;
+            if (outOfBounds(adjacent)) continue;
             int adjacentReach = getBlastShieldReachAt(adjacent);
             if (adjacentReach < minAdjacentReach) minAdjacentReach = adjacentReach;
         }
         return minAdjacentReach + (world.getBlockState(pos).isAir() ? 1 : 5);
     }
 
-    private final Set<DisplayEntity> bunk = new HashSet<>();
+    public record WorkingDecreaseGroup(
+            int reach,
+            Set<BlockPos> decreaseGroup,
+            Iterator<BlockPos> remaining
+    ) {
+    }
+
+    WorkingDecreaseGroup workingDecreaseGroup;
+
+    public WorkingDecreaseGroup getWorkingDecreaseGroup() {
+        return workingDecreaseGroup;
+    }
 
     public void tickBetter() {
-        for (DisplayEntity o : bunk) {
-            o.kill();
-        }
-        bunk.clear();
-
-
-        System.out.println("TICKING BOYO");
         if (decreaseGroups.isEmpty()) return;
 
+        if (workingDecreaseGroup == null) {
+            int reach = decreaseGroups.firstIntKey();
+            Set<BlockPos> decreaseGroup = decreaseGroups.get(reach);
+            Iterator<BlockPos> remaining = decreaseGroup.iterator();
 
-        int reach = decreaseGroups.firstIntKey();
-        Set<BlockPos> reachUpdates = decreaseGroups.get(reach);
-        System.out.println("Remaining: " + reachUpdates.size());
-        for (BlockPos current : reachUpdates) {
+            workingDecreaseGroup = new WorkingDecreaseGroup(reach, decreaseGroup, remaining);
 
-            DisplayEntity.BlockDisplayEntity displayEntity = new DisplayEntity.BlockDisplayEntity(EntityType.BLOCK_DISPLAY, world);
-            displayEntity.updatePosition(current.getX(), current.getY(), current.getZ());
-            ((BlockDisplayEntityInvoker) displayEntity).setBlockStateUh(Blocks.PURPLE_STAINED_GLASS.getDefaultState());
-            world.spawnEntity(displayEntity);
+            decreaseGroups.remove(reach);
+        }
 
-            bunk.add(displayEntity);
+        for (int i = 0; i < 1000; i++) {
+            if (!workingDecreaseGroup.remaining.hasNext()) break;
 
-            setBlastShieldReachAt(current, reach);
+            BlockPos current = workingDecreaseGroup.remaining.next();
+
+            setBlastShieldReachAt(current, workingDecreaseGroup.reach);
             for (BlockPos offset : ADJACENT_OFFSETS) {
                 BlockPos adjacent = current.add(offset);
-                if (!inBounds(adjacent)) continue;
-                if (getBlastShieldReachAt(adjacent) > reach) {
+                if (outOfBounds(adjacent)) continue;
+                if (getBlastShieldReachAt(adjacent) > workingDecreaseGroup.reach) {
                     int bestAdjacentReach = bestReach(adjacent);
                     insertReachUpdate(adjacent, bestAdjacentReach);
                 }
             }
         }
 
-        decreaseGroups.remove(reach);
+        if (!workingDecreaseGroup.remaining.hasNext()) {
+            workingDecreaseGroup = null;
+        }
     }
 
     private void insertReachUpdate(BlockPos pos, int reach) {
@@ -155,10 +157,10 @@ public class BlastShieldReaches {
         chunkBlastShieldReaches.get(chunkLong).setBlastShieldReachLocal(pos, blastShieldReach);
     }
 
-    public boolean inBounds(BlockPos pos) {
+    public boolean outOfBounds(BlockPos pos) {
         long chunkLong = new ChunkPos(pos).toLong();
-        if (!chunkBlastShieldReaches.containsKey(chunkLong)) return false;
-        return !world.isOutOfHeightLimit(pos);
+        if (!chunkBlastShieldReaches.containsKey(chunkLong)) return true;
+        return world.isOutOfHeightLimit(pos);
     }
 
     private static final Set<BlockPos> ADJACENT_OFFSETS = Set.of(
@@ -187,14 +189,7 @@ public class BlastShieldReaches {
 
 
         private int getBlastShieldReachLocal(BlockPos pos) {
-            try {
-
-                return reaches[packedPosToIndex(pos.asLong())];
-            } catch (Exception e) {
-
-                System.out.println(pos);
-                return -1;
-            }
+            return reaches[packedPosToIndex(pos.asLong())];
         }
 
         // taken from BlockPos, wasn't public

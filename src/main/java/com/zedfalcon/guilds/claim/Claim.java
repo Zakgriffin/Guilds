@@ -3,17 +3,22 @@ package com.zedfalcon.guilds.claim;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.zedfalcon.guilds.ClaimVisualization;
 import com.zedfalcon.guilds.Guild;
 import com.zedfalcon.guilds.Vault;
 import com.zedfalcon.guilds.helpers.Geometry;
 import com.zedfalcon.guilds.helpers.HashOrderedTreeSet;
 import com.zedfalcon.guilds.helpers.Traversal;
+import net.minecraft.entity.decoration.DisplayEntity;
+import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec2f;
+import net.minecraft.util.math.Vec3d;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Claim {
     private final UUID id;
@@ -22,7 +27,7 @@ public class Claim {
     private final BlastShieldReaches blastShieldReaches;
     private final ServerWorld world;
     private String name;
-    private List<Vec2f> outlinePoints;
+    private List<BlockPos> outlineBlocks;
 
     public Claim(UUID id, Set<ClaimPoint> claimPoints, Vault vault, BlastShieldReaches blastShieldReaches, ServerWorld world) {
         this.id = id;
@@ -31,8 +36,6 @@ public class Claim {
         this.blastShieldReaches = blastShieldReaches;
         this.world = world;
         ClaimStorage.INSTANCE.addClaim(this);
-
-        recalculateOutlinePoints();
     }
 
     public Claim(ServerWorld world) {
@@ -51,26 +54,24 @@ public class Claim {
     }
 
     private void updateClaimArea() {
-        recalculateOutlinePoints();
+        recalculateOutlineBlocks();
         Set<ChunkPos> chunks = getEnclosedChunks();
         ClaimStorage.INSTANCE.addClaimToChunks(this, chunks);
     }
 
-    private void recalculateOutlinePoints() {
-        List<Vec2f> allCornerPoints = new ArrayList<>();
+    private void recalculateOutlineBlocks() {
+        List<BlockPos> allCornerBlocks = new ArrayList<>();
         for (ClaimPoint claimPoint : claimPoints) {
-            for (BlockPos blockPos : claimPoint.getCorners()) {
-                allCornerPoints.add(new Vec2f(blockPos.getX(), blockPos.getZ()));
-            }
+            allCornerBlocks.addAll(claimPoint.getCorners());
         }
-        outlinePoints = Geometry.convexHull(allCornerPoints);
+        outlineBlocks = Geometry.convexHull(allCornerBlocks);
     }
 
     private Set<ChunkPos> getEnclosedChunks() {
         // TODO this could probably be optimized
         Traversal<ChunkPos> traversal = new Traversal<>() {
             private boolean withinOutline(int x, int z) {
-                return Geometry.pointWithinPolygonInclusive(new Vec2f(x, z), outlinePoints);
+                return Geometry.pointWithinPolygonInclusive(new BlockPos(x, 0, z), outlineBlocks);
             }
 
             @Override
@@ -97,16 +98,48 @@ public class Claim {
         };
 
         ClaimPoint startClaimPoint = claimPoints.stream().findAny().orElse(null);
-        if (startClaimPoint == null) return null;
-        ChunkPos startBlockPos = new ChunkPos(startClaimPoint.getBlockPos());
+        if (startClaimPoint == null) return Set.of();
+        ChunkPos startChunkPos = new ChunkPos(startClaimPoint.getBlockPos());
 
-        traversal.addToVisit(startBlockPos);
+        traversal.addToVisit(startChunkPos);
         traversal.traverse();
         return traversal.getVisited();
     }
 
     public boolean enclosesBlock(BlockPos pos) {
-        return Geometry.pointWithinPolygonInclusive(new Vec2f(pos.getX(), pos.getZ()), outlinePoints);
+        return Geometry.pointWithinPolygonInclusive(pos, outlineBlocks);
+    }
+
+
+    private final Set<BlockPos> oldStuff = new HashSet<>();
+    BlastShieldReaches.WorkingDecreaseGroup oldW = null;
+
+    public void tick() {
+        blastShieldReaches.tickBetter();
+
+        BlastShieldReaches.WorkingDecreaseGroup w = blastShieldReaches.getWorkingDecreaseGroup();
+        if (w != oldW) {
+            for (BlockPos oldThing : oldStuff) {
+                for (var player : world.getPlayers()) {
+                    ClaimVisualization.bonkClear(player, oldThing);
+                }
+            }
+            oldStuff.clear();
+            oldW = w;
+        }
+
+        if (w == null) return;
+
+//        Color c = Color.getHSBColor(w.reach() / 360f, 1, 1);
+//        DustParticleEffect particle = new DustParticleEffect(Vec3d.unpackRgb(c.getRGB()).toVector3f(), 0.5f);
+
+        for (BlockPos blastShieldPos : w.decreaseGroup()) {
+            for (var player : world.getPlayers()) {
+                ClaimVisualization.bonk(player, blastShieldPos, w.reach());
+                oldStuff.add(blastShieldPos);
+//                world.spawnParticles(player, particle, true, blastShieldPos.getX(), blastShieldPos.getY(), blastShieldPos.getZ(), 1, 0, 0, 0, 0);
+            }
+        }
     }
 
     public UUID getUuid() {
@@ -125,8 +158,8 @@ public class Claim {
         return world;
     }
 
-    public List<Vec2f> getOutlinePoints() {
-        return outlinePoints;
+    public List<BlockPos> getOutlineBlocks() {
+        return outlineBlocks;
     }
 
 

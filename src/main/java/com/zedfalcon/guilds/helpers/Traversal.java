@@ -8,32 +8,30 @@ import java.util.LinkedList;
 public abstract class Traversal<T> {
     private final Queue<T> toVisit;
     protected final Set<T> visited;
-    private boolean terminated;
 
     public Traversal() {
         this.toVisit = new LinkedList<>();
         this.visited = new HashSet<>();
-        this.terminated = false;
     }
 
     protected abstract Set<T> getSuccessors(T item);
-    protected void onEach(T item) {}
+
+    protected void onEach(T item) {
+    }
 
     public void addToVisit(T item) {
         toVisit.add(item);
     }
 
     public void traverse() {
-        while (toVisit.size() > 0 && !terminated) {
+        while (toVisit.size() > 0) {
             T item = toVisit.remove();
             onEach(item);
-            toVisit.addAll(getSuccessors(item));
+            for (T successor : getSuccessors(item)) {
+                if (!visited.contains(successor)) toVisit.add(successor);
+            }
             visited.add(item);
         }
-    }
-
-    public void terminate() {
-        terminated = true;
     }
 
     public Set<T> getVisited() {

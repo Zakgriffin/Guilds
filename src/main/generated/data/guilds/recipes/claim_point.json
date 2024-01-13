@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "e": {
+      "item": "minecraft:gold_block"
+    }
+  },
+  "pattern": [
+    "eee",
+    "eee",
+    "eee"
+  ],
+  "result": {
+    "item": "guilds:claim_point"
+  }
+}

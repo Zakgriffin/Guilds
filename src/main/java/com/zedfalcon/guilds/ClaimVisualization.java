@@ -90,33 +90,47 @@ public class ClaimVisualization {
         return GLASS_BLOCK_STATES[blastShieldReach % GLASS_BLOCK_STATES.length];
     }
 
-    private void sendBlockPacket(ServerPlayerEntity player, BlockPos blockPos, BlockState blockState) {
+    public static void bonk(ServerPlayerEntity player, BlockPos blockPos, int blastShieldReach) {
+        sendBlockPacket(player, blockPos, GLASS_BLOCK_STATES[blastShieldReach % GLASS_BLOCK_STATES.length]);
+    }
+
+    public static void bonkClear(ServerPlayerEntity player, BlockPos blockPos) {
+        sendBlockPacket(player, blockPos, player.getWorld().getBlockState(blockPos));
+    }
+
+    private static void sendBlockPacket(ServerPlayerEntity player, BlockPos blockPos, BlockState blockState) {
         player.networkHandler.sendPacket(new BlockUpdateS2CPacket(blockPos, blockState));
     }
 
     public void showClaimOutlineTo(ServerPlayerEntity player, Claim claim) {
-        List<Vec2f> outlineBlocks = claim.getOutlinePoints();
+        List<BlockPos> outlineBlocks = claim.getOutlineBlocks();
         for (int i = 0; i < outlineBlocks.size(); i++) {
-            Vec2f p1 = outlineBlocks.get(i);
-            Vec2f p2 = outlineBlocks.get((i + 1) % outlineBlocks.size());
-            float dist = MathHelper.sqrt(p2.distanceSquared(p1));
-            Vec2f step = p2.add(p1.negate()).normalize();
+            Vec3d p1 = outlineBlocks.get(i).toCenterPos();
+            Vec3d p2 = outlineBlocks.get((i + 1) % outlineBlocks.size()).toCenterPos();
+            double dist = p2.distanceTo(p1);
+            Vec3d step = p2.subtract(p1).normalize();
             for (int j = 0; j < dist; j += 1) {
-                Vec2f l = p1.add(step.multiply(j));
+                Vec3d l = p1.add(step.multiply(j));
                 DustParticleEffect particle = new DustParticleEffect(Vec3d.unpackRgb(0xFFFF00).toVector3f(), 1);
 
                 ServerWorld world = claim.getWorld();
-                int topY = world.getTopY(WORLD_SURFACE, (int) l.x, (int) l.y);
-                world.spawnParticles(player, particle, true, l.x, topY, l.y, 1, 0, 0, 0, 0);
+                int topY = world.getTopY(WORLD_SURFACE, (int) l.x, (int) l.z);
+                world.spawnParticles(player, particle, true, l.x, Math.max(l.y, topY), l.z, 1, 0, 0, 0, 0);
             }
         }
     }
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 214.5)
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 213.5)
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 212.5)
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 211.5)
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 210.5)
+//[01:15:05] [Server thread/INFO] (Minecraft) [STDOUT]: WHAT: (194.5, 90.5, 209.5)
 
-    public void updateLowResistanceBound(ServerPlayerEntity player, int newLowBound) {
+    public void updateLowBlastShieldReachBound(ServerPlayerEntity player, int newLowBound) {
         playerClaimVisualizationInfos.get(player).lowBlastShieldReachBound = newLowBound;
     }
 
-    public void updateHighResistanceBound(ServerPlayerEntity player, int newHighBound) {
+    public void updateHighBlastShieldReachBound(ServerPlayerEntity player, int newHighBound) {
         playerClaimVisualizationInfos.get(player).highBlastShieldReachBound = newHighBound;
     }
 
@@ -134,7 +148,7 @@ public class ClaimVisualization {
             for (int x = -squareRadius; x <= squareRadius; x++) {
                 for (int z = -squareRadius; z <= squareRadius; z++) {
                     BlockPos pos = player.getBlockPos().add(x, y, z);
-                    if (!blastShieldReaches.inBounds(pos)) continue;
+                    if (blastShieldReaches.outOfBounds(pos)) continue;
 
                     int blastShieldReach = blastShieldReaches.getBlastShieldReachAt(pos);
                     if (blastShieldReach >= info.lowBlastShieldReachBound && blastShieldReach <= info.highBlastShieldReachBound) {
